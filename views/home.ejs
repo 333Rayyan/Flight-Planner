@@ -1,20 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Home</title>
-	<link rel="stylesheet" href="/css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
-
 <body>
-	<%- include('header') %>
-		<main>
-			<h2>Welcome to Travel Planner!</h2>
-			<p>Plan your trips and explore the world with ease.</p>
-		</main>
-		<%- include('footer') %>
+  <%- include("partials/header") %>
+  <main>
+    <h2>Featured Destinations</h2>
+    <ul>
+      <% destinations.forEach(destination => { %>
+        <li>
+          <h3><%= destination.name %></h3>
+          <p><%= destination.description %></p>
+        </li>
+      <% }) %>
+    </ul>
+  </main>
+  <%- include("partials/footer") %>
 </body>
-
 </html>
