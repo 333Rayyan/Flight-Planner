@@ -19,3 +19,10 @@ INSERT INTO destinations (name, description) VALUES
 ('Tokyo', 'The capital city of Japan, known for its modernity and traditional temples.'),
 ('Sydney', 'The largest city in Australia, known for its Sydney Opera House and Harbour Bridge.'),
 ('Cairo', 'The capital city of Egypt, known for its ancient pyramids and rich history.');
+
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
