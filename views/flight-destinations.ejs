@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Destinations</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Available Flight Destinations</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/search">Search Flights</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>Starting Location: <%= startingLocation %></h2>
+        <h2>Destination: <%= destinationLocation %></h2>
+
+        <% if (destinations && destinations.length > 0) { %>
+            <ul>
+                <% destinations.forEach(destination => { %>
+                    <li>
+                        <div>
+                            <p><strong>From:</strong> <%= destination.origin %></p>
+                            <p><strong>To:</strong> <%= destination.destination %></p>
+                            <p><strong>Departure:</strong> <%= destination.departureDate %></p>
+                            <p><strong>Return:</strong> <%= destination.returnDate %></p>
+                        </div>
+                        <div class="price">€<%= destination.price.total %></div>
+                    </li>
+                <% }) %>
+            </ul>
+        <% } else { %>
+            <p>No flights found matching your criteria. Please try another search.</p>
+        <% } %>
+
+        <a href="/search" class="search-again">Search Again</a>
+    </main>
+    <footer>
+        <p>&copy; 2024 Travel Planner. All rights reserved.</p>
+    </footer>
+</body>
+</html>

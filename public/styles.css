@@ -1,41 +1,66 @@
 body {
-	font-family: Arial, sans-serif;
-	margin: 0;
-	padding: 0;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
 header {
-	background-color: #007bff;
-	color: white;
-	padding: 1em;
-	text-align: center;
+    background-color: #007bff;
+    color: white;
+    padding: 1em;
+    text-align: center;
 }
 
 nav ul {
-	list-style: none;
-	padding: 0;
+    list-style: none;
+    padding: 0;
 }
 
 nav ul li {
-	display: inline;
-	margin: 0 10px;
+    display: inline;
+    margin: 0 10px;
 }
 
 nav ul li a {
-	color: white;
-	text-decoration: none;
+    color: white;
+    text-decoration: none;
 }
 
 main {
-	padding: 2em;
+    padding: 2em;
 }
 
 footer {
-	background-color: #333;
-	color: white;
-	text-align: center;
-	padding: 1em;
-	position: absolute;
-	bottom: 0;
-	width: 100%;
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 1em;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Moved from flight-destinations.ejs */
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    padding: 15px;
+    margin-bottom: 10px;
+    background: #33a0b5;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+li strong {
+    color: #007bff;
+}
+
+.price {
+    font-size: 1.2em;
+    color: green;
 }

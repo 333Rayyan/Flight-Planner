@@ -1,9 +1,16 @@
 <header>
 	<h1>Travel Planner</h1>
 	<nav>
-		<ul>
-			<li><a href="/">Home</a></li>
-			<li><a href="/about">About</a></li>
-		</ul>
+	  <ul>
+		<li><a href="/">Home</a></li>
+		<li><a href="/about">About</a></li>
+		<li><a href="/search">Search Flights</a></li>
+		<% if (user) { %>
+		  <li><a href="/logout">Logout</a></li>
+		<% } else { %>
+		  <li><a href="/register">Register</a></li>
+		  <li><a href="/login">Login</a></li>
+		<% } %>
+	  </ul>
 	</nav>
-</header>
+  </header>
