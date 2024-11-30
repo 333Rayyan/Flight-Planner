@@ -5,7 +5,7 @@ const path = require("path");
 const mysql = require("mysql2");
 const session = require("express-session");
 const bcrypt = require('bcrypt');
-const axios = require('axios'); 
+const axios = require('axios');
 
 const app = express();
 const PORT = 8000;
@@ -16,69 +16,64 @@ const CLIENT_SECRET = 'mBf6GiYz7iIoTj17'; // Replace with your client secret
 
 // Predefined list of cities with IATA codes
 const cities = [
-    { name: "London", code: "LON" },
-    { name: "Paris", code: "PAR" },
-    { name: "Dhaka", code: "DAC" },
-    { name: "New York", code: "NYC" },
-    { name: "Tokyo", code: "TYO" },
-    { name: "Sydney", code: "SYD" },
-    { name: "Los Angeles", code: "LAX" },
-    { name: "Chicago", code: "ORD" },
-    { name: "Toronto", code: "YYZ" },
-    { name: "Mumbai", code: "BOM" },
-    { name: "Delhi", code: "DEL" },
-    { name: "Singapore", code: "SIN" },
-    { name: "Dubai", code: "DXB" },
-    { name: "Hong Kong", code: "HKG" },
-    { name: "Bangkok", code: "BKK" },
-    { name: "Kuala Lumpur", code: "KUL" },
-    { name: "Seoul", code: "ICN" },
-    { name: "Istanbul", code: "IST" },
-    { name: "Cape Town", code: "CPT" },
-    { name: "Johannesburg", code: "JNB" },
-    { name: "Melbourne", code: "MEL" },
-    { name: "Rome", code: "FCO" },
-    { name: "Berlin", code: "BER" },
-    { name: "Madrid", code: "MAD" },
-    { name: "Barcelona", code: "BCN" },
     { name: "Amsterdam", code: "AMS" },
-    { name: "Frankfurt", code: "FRA" },
-    { name: "Zurich", code: "ZRH" },
-    { name: "Vienna", code: "VIE" },
-    { name: "Lisbon", code: "LIS" },
-    { name: "Athens", code: "ATH" },
-    { name: "Cairo", code: "CAI" },
-    { name: "Moscow", code: "DME" },
-    { name: "Warsaw", code: "WAW" },
-    { name: "Prague", code: "PRG" },
-    { name: "Budapest", code: "BUD" },
-    { name: "Helsinki", code: "HEL" },
-    { name: "Stockholm", code: "ARN" },
-    { name: "Oslo", code: "OSL" },
-    { name: "Copenhagen", code: "CPH" },
-    { name: "Brussels", code: "BRU" },
-    { name: "Mexico City", code: "MEX" },
-    { name: "Sao Paulo", code: "GRU" },
-    { name: "Buenos Aires", code: "EZE" },
-    { name: "Lima", code: "LIM" },
-    { name: "Bogota", code: "BOG" },
-    { name: "Rio de Janeiro", code: "GIG" },
-    { name: "Santiago", code: "SCL" },
+    { name: "Barcelona", code: "BCN" },
     { name: "Beijing", code: "PEK" },
+    { name: "Berlin", code: "BER" },
+    { name: "Bogota", code: "BOG" },
+    { name: "Buenos Aires", code: "EZE" },
+    { name: "Brussels", code: "BRU" },
+    { name: "Cairo", code: "CAI" },
+    { name: "Cape Town", code: "CPT" },
+    { name: "Chicago", code: "ORD" },
+    { name: "Copenhagen", code: "CPH" },
+    { name: "Delhi", code: "DEL" },
+    { name: "Dhaka", code: "DAC" },
+    { name: "Dubai", code: "DXB" },
+    { name: "Frankfurt", code: "FRA" },
+    { name: "Guangzhou", code: "CAN" },
+    { name: "Helsinki", code: "HEL" },
+    { name: "Hong Kong", code: "HKG" },
+    { name: "Istanbul", code: "IST" },
+    { name: "Johannesburg", code: "JNB" },
+    { name: "Lisbon", code: "LIS" },
+    { name: "London", code: "LON" },
+    { name: "Los Angeles", code: "LAX" },
+    { name: "Madrid", code: "MAD" },
+    { name: "Melbourne", code: "MEL" },
+    { name: "Mexico City", code: "MEX" },
+    { name: "Mumbai", code: "BOM" },
+    { name: "New York", code: "NYC" },
+    { name: "Oslo", code: "OSL" },
+    { name: "Paris", code: "PAR" },
+    { name: "Prague", code: "PRG" },
+    { name: "Rio de Janeiro", code: "GIG" },
+    { name: "Rome", code: "FCO" },
+    { name: "Santiago", code: "SCL" },
+    { name: "Sao Paulo", code: "GRU" },
+    { name: "Seoul", code: "ICN" },
     { name: "Shanghai", code: "PVG" },
-    { name: "Guangzhou", code: "CAN" }
+    { name: "Singapore", code: "SIN" },
+    { name: "Stockholm", code: "ARN" },
+    { name: "Sydney", code: "SYD" },
+    { name: "Tokyo", code: "TYO" },
+    { name: "Toronto", code: "YYZ" },
+    { name: "Vienna", code: "VIE" },
+    { name: "Warsaw", code: "WAW" },
+    { name: "Zurich", code: "ZRH" }
 ];
+
 
 
 // Function to generate an access token
 async function getAccessToken() {
     try {
-        const response = await axios.post('https://test.api.amadeus.com/v1/security/oauth2/token', 
+        const response = await axios.post('https://test.api.amadeus.com/v1/security/oauth2/token',
             new URLSearchParams({
                 grant_type: 'client_credentials',
                 client_id: CLIENT_ID,
                 client_secret: CLIENT_SECRET,
-            }).toString(), 
+            }).toString(),
             {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -92,25 +87,8 @@ async function getAccessToken() {
     }
 }
 
-// Function to fetch flight destinations
-async function getFlightDestinations(origin, maxPrice = 200) {
-    try {
-        const accessToken = await getAccessToken();
-        const response = await axios.get('https://test.api.amadeus.com/v1/shopping/flight-destinations', {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-            params: {
-                origin: origin,
-                maxPrice: maxPrice,
-            },
-        });
-        return response.data.data; // Return the flight destinations
-    } catch (error) {
-        console.error('Error fetching flight destinations:', error.response?.data || error.message);
-        throw new Error('Failed to fetch flight destinations');
-    }
-}
+
+
 
 // Database connection
 const pool = mysql.createPool({
@@ -260,32 +238,67 @@ app.get('/logout', (req, res) => {
 
 // Flight destinations route
 app.get('/flight-destinations', async (req, res) => {
-    const { origin, destination, maxPrice } = req.query;
+    let {
+        originLocationCode,
+        destinationLocationCode,
+        departureDate,
+        returnDate,
+        adults,
+        children,
+        maxPrice,
+    } = req.query;
 
-    if (!origin) {
-        return res.status(400).send('Starting location (origin) is required.');
+    // Set defaults explicitly if parameters are missing or empty
+    returnDate = returnDate || null; // Default to null if not provided
+    children = children ? parseInt(children) : 0; // Default to 0 if not provided
+    maxPrice = maxPrice ? parseInt(maxPrice) : 0; // Default to 0 if not provided
+
+
+    // Validate required parameters
+    if (!originLocationCode || !destinationLocationCode || !departureDate) {
+        return res.status(400).send('Missing required parameters: originLocationCode, destinationLocationCode, or departureDate');
     }
 
     try {
-        // Fetch flight destinations from the Amadeus API
-        const destinations = await getFlightDestinations(origin, maxPrice || 200);
+        // Get access token
+        const accessToken = await getAccessToken();
 
-        // Filter destinations if a specific destination was provided
-        const filteredDestinations = destination
-            ? destinations.filter(dest => dest.destination === destination)
-            : destinations;
+        // Make API request to fetch flight offers
+        const response = await axios.get('https://test.api.amadeus.com/v2/shopping/flight-offers', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+            params: {
+                originLocationCode,
+                destinationLocationCode,
+                departureDate,
+                returnDate,
+                adults: parseInt(adults),
+                children: parseInt(children),
+                currencyCode: "GBP", // Default currency
+                maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
+                max: 50
+            },
+        });
+        const offers = response.data.data || [];
+        const dictionaries = response.data.dictionaries || {};
 
-        // Render the flight-destinations page with results
         res.render('flight-destinations', {
-            destinations: filteredDestinations,
-            startingLocation: cities.find(city => city.code === origin)?.name || 'Unknown',
-            destinationLocation: destination ? cities.find(city => city.code === destination)?.name : 'Various',
+            startingLocation: originLocationCode,
+            destinationLocation: destinationLocationCode || 'Various',
+            offers,
+            carriers: dictionaries.carriers || {},
+            aircraft: dictionaries.aircraft || {},
+            user: req.session.user || null,
         });
     } catch (error) {
-        console.error('Error fetching flight destinations:', error.message);
-        res.status(500).send(`Error: ${error.message}`);
+        console.error('Error fetching flight offers:', error.response.status, error.response?.data || error.message);
+        res.status(500).send('Failed to fetch flight offers');
     }
 });
+
+
+
 
 // Search page route
 app.get('/search', (req, res) => {
@@ -295,12 +308,63 @@ app.get('/search', (req, res) => {
 // Test route to generate an access token
 app.get('/test-token', async (req, res) => {
     try {
-        const token = await getAccessToken(); 
+        const token = await getAccessToken();
         res.send(`Access Token: ${token}`);
     } catch (error) {
         res.status(500).send('Failed to get access token');
     }
 });
+
+app.get('/bookmarks', isAuthenticated, async (req, res) => {
+    const userId = req.session.user.id; // Get the logged-in user's ID
+
+    try {
+        const [bookmarks] = await req.db.query(
+            'SELECT origin, destination, departure_date, return_date, price FROM bookmarks WHERE user_id = ?',
+            [userId]
+        );
+
+        res.render('bookmarks', { bookmarks });
+    } catch (error) {
+        console.error('Error fetching bookmarks:', error.message);
+        res.status(500).send('Failed to fetch bookmarks.');
+    }
+});
+
+app.post('/bookmark', isAuthenticated, async (req, res) => {
+    const { origin, destination, departureDate, returnDate, price } = req.body;
+    const userId = req.session.user.id; // Get the logged-in user's ID
+
+    try {
+        await req.db.query(
+            'INSERT INTO bookmarks (user_id, origin, destination, departure_date, return_date, price) VALUES (?, ?, ?, ?, ?, ?)',
+            [userId, origin, destination, departureDate, returnDate || null, price]
+        );
+        // Redirect to the bookmarks page after successfully saving
+        res.redirect('/bookmarks');
+    } catch (error) {
+        console.error('Error saving bookmark:', error.message);
+        res.status(500).send('Failed to bookmark flight.');
+    }
+});
+
+app.post('/remove-bookmark', isAuthenticated, async (req, res) => {
+    const { bookmarkId } = req.body;
+    const userId = req.session.user.id;
+
+    try {
+        await req.db.query('DELETE FROM bookmarks WHERE id = ? AND user_id = ?', [bookmarkId, userId]);
+        res.redirect('/bookmarks'); // Always redirect back to the bookmarks page
+    } catch (error) {
+        console.error('Error removing bookmark:', error.message);
+        res.status(500).send('Failed to remove bookmark.');
+    }
+});
+
+
+
+
+
 
 // Start the server
 app.listen(PORT, () => {

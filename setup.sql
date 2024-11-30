@@ -27,3 +27,15 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL
 );
+
+
+CREATE TABLE IF NOT EXISTS bookmarks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    origin VARCHAR(3) NOT NULL,
+    destination VARCHAR(3) NOT NULL,
+    departure_date DATE NOT NULL,
+    return_date DATE,
+    price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

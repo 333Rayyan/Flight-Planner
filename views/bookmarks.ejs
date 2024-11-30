@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My Bookmarked Flights</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include("partials/header") %>
+    <main>
+        <h1>My Bookmarked Flights</h1>
+        <% if (bookmarks.length > 0) { %>
+            <ul>
+                <% bookmarks.forEach(bookmark => { %>
+                    <li>
+                        <p><strong>From:</strong> <%= bookmark.origin %></p>
+                        <p><strong>To:</strong> <%= bookmark.destination %></p>
+                        <p><strong>Departure:</strong> <%= bookmark.departure_date %></p>
+                        <p><strong>Return:</strong> <%= bookmark.return_date || 'N/A' %></p>
+                        <p><strong>Price:</strong> €<%= bookmark.price %></p>
+                        <button class="remove-btn" data-bookmark-id="<%= bookmark.id %>">Remove</button>
+                    </li>
+                <% }) %>
+            </ul>
+        <% } else { %>
+            <p>You have no bookmarked flights.</p>
+        <% } %>
+    </main>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <p>Are you sure you want to remove this bookmark?</p>
+            <button id="confirmYes">Yes</button>
+            <button id="confirmNo">No</button>
+        </div>
+    </div>
+
+    <form id="removeForm" action="/remove-bookmark" method="POST" style="display:none;">
+        <input type="hidden" name="bookmarkId" id="bookmarkId">
+    </form>
+
+    <!-- Include the script file -->
+    <script src="/script.js"></script>
+    <%- include("partials/footer") %>
+</body>
+</html>

@@ -3,43 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flight Destinations</title>
+    <title>Flight Offers</title>
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <header>
-        <h1>Available Flight Destinations</h1>
+        <h1>Flight Offers</h1>
         <nav>
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/about">About</a></li>
                 <li><a href="/search">Search Flights</a></li>
+                <% if (user) { %>
+                    <li><a href="/bookmarks">My Bookmarks</a></li>
+                    <li><a href="/logout">Logout</a></li>
+                <% } else { %>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/register">Register</a></li>
+                <% } %>
             </ul>
         </nav>
     </header>
     <main>
         <h2>Starting Location: <%= startingLocation %></h2>
-        <h2>Destination: <%= destinationLocation %></h2>
+        <h2>Destination: <%= destinationLocation || 'Various' %></h2>
 
-        <% if (destinations && destinations.length > 0) { %>
-            <ul>
-                <% destinations.forEach(destination => { %>
-                    <li>
-                        <div>
-                            <p><strong>From:</strong> <%= destination.origin %></p>
-                            <p><strong>To:</strong> <%= destination.destination %></p>
-                            <p><strong>Departure:</strong> <%= destination.departureDate %></p>
-                            <p><strong>Return:</strong> <%= destination.returnDate %></p>
-                        </div>
-                        <div class="price">€<%= destination.price.total %></div>
+        <% if (offers && offers.length > 0) { %>
+            <ul class="flights-list">
+                <% offers.forEach(offer => { %>
+                    <li class="flight-item">
+                        <h3>Offer ID: <%= offer.id %></h3>
+                        <p><strong>Total Price:</strong> £<%= offer.price.grandTotal %></p>
+                        <p><strong>Number of Seats:</strong> <%= offer.numberOfBookableSeats %></p>
+                        <% offer.itineraries.forEach((itinerary, index) => { %>
+                            <div class="itinerary">
+                                <h4>Itinerary <%= index + 1 %> - Duration: <%= itinerary.duration %></h4>
+                                <ul>
+                                    <% itinerary.segments.forEach(segment => { %>
+                                        <li>
+                                            <p><strong>From:</strong> <%= segment.departure.iataCode %> (<%= segment.departure.at %>)</p>
+                                            <p><strong>To:</strong> <%= segment.arrival.iataCode %> (<%= segment.arrival.at %>)</p>
+                                            <p><strong>Carrier:</strong> <%= carriers[segment.carrierCode] %></p>
+                                            <p><strong>Aircraft:</strong> <%= aircraft[segment.aircraft.code] %></p>
+                                            <p><strong>Duration:</strong> <%= segment.duration %></p>
+                                        </li>
+                                    <% }) %>
+                                </ul>
+                            </div>
+                        <% }) %>
+                        <% if (user) { %>
+                            <form action="/bookmark" method="POST" class="bookmark-form">
+                                <input type="hidden" name="offerId" value="<%= offer.id %>">
+                                <input type="hidden" name="price" value="<%= offer.price.grandTotal %>">
+                                <button type="submit" class="bookmark-btn">Bookmark</button>
+                            </form>
+                        <% } else { %>
+                            <p><em>Login to bookmark this flight.</em></p>
+                        <% } %>
                     </li>
                 <% }) %>
             </ul>
         <% } else { %>
-            <p>No flights found matching your criteria. Please try another search.</p>
+            <p>No flight offers found. Please try again.</p>
         <% } %>
-
-        <a href="/search" class="search-again">Search Again</a>
     </main>
     <footer>
         <p>&copy; 2024 Travel Planner. All rights reserved.</p>
