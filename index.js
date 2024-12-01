@@ -158,6 +158,7 @@ app.post('/register', async (req, res) => {
     try {
         const { email, username, password, confirmPassword } = req.body;
 
+        // Validate input
         if (!email || !username || !password || !confirmPassword) {
             return res.status(400).send('All fields are required.');
         }
@@ -166,11 +167,20 @@ app.post('/register', async (req, res) => {
             return res.status(400).send('Passwords do not match.');
         }
 
-        if (username.length < 3 || password.length < 6) {
-            return res.status(400).send('Username must be at least 3 characters and password at least 6 characters.');
+        // Password validation: At least 6 characters, one uppercase, one lowercase, one number, one special character
+        const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$/;
+        if (!passwordRegex.test(password)) {
+            return res.status(400).send('Password must be at least 6 characters long, include one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*).');
         }
 
+        if (username.length < 3) {
+            return res.status(400).send('Username must be at least 3 characters long.');
+        }
+
+        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insert user into the database
         const [result] = await req.db.query(
             'INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
             [username, hashedPassword, email]
@@ -190,6 +200,7 @@ app.post('/register', async (req, res) => {
         }
     }
 });
+
 
 // Login route
 app.get('/login', (req, res) => {
@@ -235,6 +246,42 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
+
+// Route: Profile Page
+app.get('/profile', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const [user] = await req.db.query(
+            'SELECT id, username, email FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (user.length === 0) {
+            return res.status(404).send('User not found.');
+        }
+
+        res.render('profile', { user: user[0] });
+    } catch (error) {
+        console.error('Error fetching user profile:', error.message);
+        res.status(500).send('Failed to fetch user profile.');
+    }
+});
+
+
+// Route: Delete Account
+app.post('/delete-account', isAuthenticated, async (req, res) => {
+    const userId = req.session.user.id;
+
+    try {
+        await req.db.query('DELETE FROM users WHERE id = ?', [userId]);
+        req.session.destroy(); // Clear the session
+        res.redirect('/register'); // Redirect to register page after account deletion
+    } catch (error) {
+        console.error('Error deleting account:', error.message);
+        res.status(500).send('Error deleting account.');
+    }
+});
+
 
 // Flight destinations route
 app.get('/flight-destinations', async (req, res) => {
@@ -316,11 +363,11 @@ app.get('/test-token', async (req, res) => {
 });
 
 app.get('/bookmarks', isAuthenticated, async (req, res) => {
-    const userId = req.session.user.id; // Get the logged-in user's ID
+    const userId = req.session.user.id;
 
     try {
         const [bookmarks] = await req.db.query(
-            'SELECT origin, destination, departure_date, return_date, price FROM bookmarks WHERE user_id = ?',
+            'SELECT id, origin, destination, departure_date, return_date, price FROM bookmarks WHERE user_id = ?',
             [userId]
         );
 
@@ -331,15 +378,18 @@ app.get('/bookmarks', isAuthenticated, async (req, res) => {
     }
 });
 
+
 app.post('/bookmark', isAuthenticated, async (req, res) => {
-    const { origin, destination, departureDate, returnDate, price } = req.body;
+    const { origin, destination, departureDate, returnDate, price } = req.body; // Get offer details from the form
     const userId = req.session.user.id; // Get the logged-in user's ID
 
     try {
+        // Insert the bookmark into the database
         await req.db.query(
             'INSERT INTO bookmarks (user_id, origin, destination, departure_date, return_date, price) VALUES (?, ?, ?, ?, ?, ?)',
             [userId, origin, destination, departureDate, returnDate || null, price]
         );
+
         // Redirect to the bookmarks page after successfully saving
         res.redirect('/bookmarks');
     } catch (error) {
@@ -348,18 +398,32 @@ app.post('/bookmark', isAuthenticated, async (req, res) => {
     }
 });
 
+
 app.post('/remove-bookmark', isAuthenticated, async (req, res) => {
     const { bookmarkId } = req.body;
+    console.log('Bookmark ID:', bookmarkId);
     const userId = req.session.user.id;
 
     try {
-        await req.db.query('DELETE FROM bookmarks WHERE id = ? AND user_id = ?', [bookmarkId, userId]);
-        res.redirect('/bookmarks'); // Always redirect back to the bookmarks page
+        // Delete the bookmark from the database
+        const [result] = await req.db.query(
+            'DELETE FROM bookmarks WHERE id = ? AND user_id = ?',
+            [bookmarkId, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            console.error('Bookmark not found or does not belong to the user.');
+        }
+
+        // Redirect back to the bookmarks page after deletion
+        res.redirect('/bookmarks');
     } catch (error) {
         console.error('Error removing bookmark:', error.message);
         res.status(500).send('Failed to remove bookmark.');
     }
 });
+
+
 
 
 
