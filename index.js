@@ -250,37 +250,109 @@ app.get('/logout', (req, res) => {
 // Route: Profile Page
 app.get('/profile', isAuthenticated, async (req, res) => {
     try {
-        const userId = req.session.user.id;
         const [user] = await req.db.query(
             'SELECT id, username, email FROM users WHERE id = ?',
-            [userId]
+            [req.session.user.id]
         );
 
         if (user.length === 0) {
-            return res.status(404).send('User not found.');
+            return res.redirect('/logout');
         }
 
-        res.render('profile', { user: user[0] });
-    } catch (error) {
-        console.error('Error fetching user profile:', error.message);
-        res.status(500).send('Failed to fetch user profile.');
+        res.render('profile', {
+            user: user[0],
+            message: req.session.message || null, // Use a message if set
+            error: req.session.error || null // Use an error if set
+        });
+
+        // Clear session variables after rendering
+        delete req.session.message;
+        delete req.session.error;
+    } catch (err) {
+        console.error('Error fetching user profile:', err);
+        res.status(500).send('Failed to load profile.');
     }
 });
 
 
-// Route: Delete Account
-app.post('/delete-account', isAuthenticated, async (req, res) => {
-    const userId = req.session.user.id;
+
+app.post('/profile/change-password', isAuthenticated, async (req, res) => {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
     try {
-        await req.db.query('DELETE FROM users WHERE id = ?', [userId]);
-        req.session.destroy(); // Clear the session
-        res.redirect('/register'); // Redirect to register page after account deletion
-    } catch (error) {
-        console.error('Error deleting account:', error.message);
-        res.status(500).send('Error deleting account.');
+        // Validate new password matches confirmation
+        if (newPassword !== confirmNewPassword) {
+            req.session.error = 'Passwords do not match.';
+            return res.redirect('/profile');
+        }
+
+        // Validate password strength
+        const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            req.session.error = `Password must:
+                - Be at least 6 characters long
+                - Include at least one uppercase letter
+                - Include at least one lowercase letter
+                - Include at least one number
+                - Include at least one special character (!@#$%^&*)`;
+            return res.redirect('/profile');
+        }
+
+        // Fetch user's current password
+        const [rows] = await req.db.query('SELECT password FROM users WHERE id = ?', [req.session.user.id]);
+        if (rows.length === 0) {
+            req.session.error = 'User not found.';
+            return res.redirect('/logout');
+        }
+
+        const user = rows[0];
+
+        // Check if the current password is correct
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            req.session.error = 'Current password is incorrect.';
+            return res.redirect('/profile');
+        }
+
+        // Hash and update the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await req.db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.session.user.id]);
+
+        // Set a success message and redirect
+        req.session.message = 'Password successfully updated.';
+        res.redirect('/profile');
+    } catch (err) {
+        console.error('Error changing password:', err);
+        req.session.error = 'Failed to change password. Please try again.';
+        res.redirect('/profile');
     }
 });
+
+
+
+
+app.post('/profile/delete', isAuthenticated, async (req, res) => {
+    const userId = req.session.user.id; // Get user ID from session
+
+    try {
+        // Delete the user from the database
+        await req.db.query('DELETE FROM users WHERE id = ?', [userId]);
+
+        // Destroy the session
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error destroying session:', err.message);
+                return res.status(500).send('An error occurred while deleting your account.');
+            }
+            res.redirect('/');
+        });
+    } catch (error) {
+        console.error('Error deleting account:', error.message);
+        res.status(500).send('Failed to delete account.');
+    }
+});
+
+
 
 
 // Flight destinations route
