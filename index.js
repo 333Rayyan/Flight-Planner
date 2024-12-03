@@ -93,9 +93,9 @@ async function getAccessToken() {
 // Database connection
 const pool = mysql.createPool({
     host: "localhost",
-    user: "travelPlannerApp",
+    user: "flightPlannerApp",
     password: "password",
-    database: "travelPlanner",
+    database: "flightPlanner",
 });
 
 // Middleware to make database available in routes
@@ -122,6 +122,8 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(express.json());
+
 // Middleware to protect routes
 function isAuthenticated(req, res, next) {
     if (req.session.user) {
@@ -140,7 +142,7 @@ app.get("/", (req, res) => {
             console.log(error);
             return res.status(500).send("Error retrieving destinations from database.");
         }
-        res.render("home", { title: "Travel Planner", destinations: results });
+        res.render("home", { title: "Flight Planner", destinations: results });
     });
 });
 
@@ -356,7 +358,7 @@ app.post('/profile/delete', isAuthenticated, async (req, res) => {
 
 
 // Flight destinations route
-app.get('/flight-destinations', async (req, res) => {
+app.get('/flight-destinations', isAuthenticated, async (req, res) => {
     let {
         originLocationCode,
         destinationLocationCode,
@@ -367,38 +369,49 @@ app.get('/flight-destinations', async (req, res) => {
         maxPrice,
     } = req.query;
 
-    // Set defaults explicitly if parameters are missing or empty
+    // Default values
+    originLocationCode = originLocationCode || 'LON'; // Default to London if not provided
     returnDate = returnDate || null; // Default to null if not provided
     children = children ? parseInt(children) : 0; // Default to 0 if not provided
     maxPrice = maxPrice ? parseInt(maxPrice) : 0; // Default to 0 if not provided
-
-
-    // Validate required parameters
-    if (!originLocationCode || !destinationLocationCode || !departureDate) {
-        return res.status(400).send('Missing required parameters: originLocationCode, destinationLocationCode, or departureDate');
-    }
 
     try {
         // Get access token
         const accessToken = await getAccessToken();
 
-        // Make API request to fetch flight offers
+        // Fetch user's bookmarked flights
+        const userId = req.session.user.id;
+        const [bookmarks] = await req.db.query(
+            `SELECT origin, destination, departure_date, return_date FROM bookmarks WHERE user_id = ?`,
+            [userId]
+        );
+
+        // Prepare bookmarked flight data for comparison
+        const bookmarkedOffers = bookmarks.map(b => JSON.stringify({
+            origin: b.origin,
+            destination: b.destination,
+            departureDate: b.departure_date.toISOString().split('T')[0],
+            returnDate: b.return_date ? b.return_date.toISOString().split('T')[0] : '',
+        }));
+
+        // Fetch flight offers
         const response = await axios.get('https://test.api.amadeus.com/v2/shopping/flight-offers', {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
             params: {
                 originLocationCode,
-                destinationLocationCode,
+                destinationLocationCode: destinationLocationCode || undefined, // Only add destination if provided
                 departureDate,
                 returnDate,
                 adults: parseInt(adults),
                 children: parseInt(children),
                 currencyCode: "GBP", // Default currency
-                maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
-                max: 50
+                maxPrice: maxPrice || undefined,
+                max: 50,
             },
         });
+
         const offers = response.data.data || [];
         const dictionaries = response.data.dictionaries || {};
 
@@ -408,10 +421,11 @@ app.get('/flight-destinations', async (req, res) => {
             offers,
             carriers: dictionaries.carriers || {},
             aircraft: dictionaries.aircraft || {},
+            bookmarkedOffers, // Pass this to the template for comparison
             user: req.session.user || null,
         });
     } catch (error) {
-        console.error('Error fetching flight offers:', error.response.status, error.response?.data || error.message);
+        console.error('Error fetching flight offers:', error.response?.data || error.message);
         res.status(500).send('Failed to fetch flight offers');
     }
 });
@@ -419,9 +433,20 @@ app.get('/flight-destinations', async (req, res) => {
 
 
 
+
+
+
 // Search page route
 app.get('/search', (req, res) => {
-    res.render('search', { cities });
+    const { destinationLocationCode, originLocationCode } = req.query;
+
+    res.render('search', {
+        query: {
+            destinationLocationCode: destinationLocationCode || '',
+            originLocationCode: originLocationCode || '',
+        },
+        cities,
+    });
 });
 
 // Test route to generate an access token
@@ -452,23 +477,50 @@ app.get('/bookmarks', isAuthenticated, async (req, res) => {
 
 
 app.post('/bookmark', isAuthenticated, async (req, res) => {
-    const { origin, destination, departureDate, returnDate, price } = req.body; // Get offer details from the form
-    const userId = req.session.user.id; // Get the logged-in user's ID
+    const { origin, destination, departureDate, returnDate, price } = req.body;
+    const userId = req.session.user.id;
 
     try {
-        // Insert the bookmark into the database
+        // Save the full datetime to the database
         await req.db.query(
             'INSERT INTO bookmarks (user_id, origin, destination, departure_date, return_date, price) VALUES (?, ?, ?, ?, ?, ?)',
             [userId, origin, destination, departureDate, returnDate || null, price]
         );
 
-        // Redirect to the bookmarks page after successfully saving
         res.redirect('/bookmarks');
     } catch (error) {
         console.error('Error saving bookmark:', error.message);
         res.status(500).send('Failed to bookmark flight.');
     }
 });
+
+app.post('/toggle-bookmark', isAuthenticated, async (req, res) => {
+    const { origin, destination, departureDate, returnDate, price } = req.body;
+    const userId = req.session.user.id;
+
+    try {
+        const [existing] = await req.db.query(
+            'SELECT id FROM bookmarks WHERE user_id = ? AND origin = ? AND destination = ? AND departure_date = ? AND return_date = ?',
+            [userId, origin, destination, departureDate, returnDate || null]
+        );
+
+        if (existing.length > 0) {
+            await req.db.query('DELETE FROM bookmarks WHERE id = ?', [existing[0].id]);
+            return res.json({ success: true, bookmarked: false });
+        } else {
+            await req.db.query(
+                'INSERT INTO bookmarks (user_id, origin, destination, departure_date, return_date, price) VALUES (?, ?, ?, ?, ?, ?)',
+                [userId, origin, destination, departureDate, returnDate || null, price]
+            );
+            return res.json({ success: true, bookmarked: true });
+        }
+    } catch (error) {
+        console.error('Error toggling bookmark:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to toggle bookmark.' });
+    }
+});
+
+
 
 
 app.post('/remove-bookmark', isAuthenticated, async (req, res) => {
