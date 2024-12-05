@@ -65,6 +65,8 @@ const cities = [
 
 
 
+
+
 // Function to generate an access token
 async function getAccessToken() {
     try {
@@ -139,7 +141,6 @@ function isAuthenticated(req, res, next) {
 app.get("/", (req, res) => {
     pool.query("SELECT name, description FROM destinations", (error, results) => {
         if (error) {
-            console.log(error);
             return res.status(500).send("Error retrieving destinations from database.");
         }
         res.render("home", { title: "Flight Planner", destinations: results });
@@ -357,8 +358,16 @@ app.post('/profile/delete', isAuthenticated, async (req, res) => {
 
 
 
+// Convert the cities array to a dictionary
+const citiesDict = cities.reduce((acc, city) => {
+    acc[city.code] = city.name;
+    return acc;
+}, {});
+
+
+
 // Flight destinations route
-app.get('/flight-destinations', isAuthenticated, async (req, res) => {
+app.get('/flight-destinations', async (req, res) => {
     let {
         originLocationCode,
         destinationLocationCode,
@@ -380,11 +389,14 @@ app.get('/flight-destinations', isAuthenticated, async (req, res) => {
         const accessToken = await getAccessToken();
 
         // Fetch user's bookmarked flights
-        const userId = req.session.user.id;
-        const [bookmarks] = await req.db.query(
-            `SELECT origin, destination, departure_date, return_date FROM bookmarks WHERE user_id = ?`,
-            [userId]
-        );
+        let bookmarks = [];
+        if (req.session.user) {
+            const userId = req.session.user.id;
+            [bookmarks] = await req.db.query(
+                `SELECT origin, destination, departure_date, return_date FROM bookmarks WHERE user_id = ?`,
+                [userId]
+            );
+        };
 
         // Prepare bookmarked flight data for comparison
         const bookmarkedOffers = bookmarks.map(b => JSON.stringify({
@@ -415,10 +427,17 @@ app.get('/flight-destinations', isAuthenticated, async (req, res) => {
         const offers = response.data.data || [];
         const dictionaries = response.data.dictionaries || {};
 
+        const offer = offers[0];
+        const itinerary = offer.itineraries[0];
+        itinerary.segments.forEach(segment => {
+            console.log(segment)
+        })
+
+        // Render the flight-destinations template
         res.render('flight-destinations', {
+            cities: citiesDict,
+            offers: offers,
             startingLocation: originLocationCode,
-            destinationLocation: destinationLocationCode || 'Various',
-            offers,
             carriers: dictionaries.carriers || {},
             aircraft: dictionaries.aircraft || {},
             bookmarkedOffers, // Pass this to the template for comparison
@@ -429,10 +448,6 @@ app.get('/flight-destinations', isAuthenticated, async (req, res) => {
         res.status(500).send('Failed to fetch flight offers');
     }
 });
-
-
-
-
 
 
 
@@ -494,7 +509,11 @@ app.post('/bookmark', isAuthenticated, async (req, res) => {
     }
 });
 
-app.post('/toggle-bookmark', isAuthenticated, async (req, res) => {
+app.post('/toggle-bookmark', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: 'User not authenticated.' });
+    }
+
     const { origin, destination, departureDate, returnDate, price } = req.body;
     const userId = req.session.user.id;
 
@@ -525,7 +544,6 @@ app.post('/toggle-bookmark', isAuthenticated, async (req, res) => {
 
 app.post('/remove-bookmark', isAuthenticated, async (req, res) => {
     const { bookmarkId } = req.body;
-    console.log('Bookmark ID:', bookmarkId);
     const userId = req.session.user.id;
 
     try {
