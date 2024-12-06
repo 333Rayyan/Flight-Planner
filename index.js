@@ -6,8 +6,11 @@ const mysql = require("mysql2");
 const session = require("express-session");
 const bcrypt = require('bcrypt');
 const axios = require('axios');
+const { body, validationResult } = require('express-validator');
+const { error } = require("console");
 
 const app = express();
+app.use(express.json());
 const PORT = 8000;
 
 // Amadeus API credentials
@@ -154,55 +157,84 @@ app.get("/about", (req, res) => {
 
 // Register route
 app.get('/register', (req, res) => {
-    res.render("register");
+    res.render("register", { errorMessages: [], formData: {} , oldData: {}});
 });
 
-app.post('/register', async (req, res) => {
-    try {
-        const { email, username, password, confirmPassword } = req.body;
 
-        // Validate input
-        if (!email || !username || !password || !confirmPassword) {
-            return res.status(400).send('All fields are required.');
+app.post(
+    '/register',
+    [
+        // Validation and sanitization
+        body('email')
+            .isEmail()
+            .withMessage('Enter a valid email address')
+            .normalizeEmail(),
+        body('username')
+            .isLength({ min: 3 })
+            .withMessage('Username must be at least 3 characters long')
+            .trim()
+            .escape(),
+        body('password')
+            .isLength({ min: 6 })
+            .withMessage('Password must be at least 6 characters long')
+            .matches(/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*])/)
+            .withMessage('Password must include one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*).'),
+        body('confirmPassword')
+            .custom((value, { req }) => {
+                if (value !== req.body.password) {
+                    throw new Error('Passwords do not match');
+                }
+                return true;
+            }),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        const { email, username, password } = req.body;
+
+        if (!errors.isEmpty()) {
+            // Render the form again with error messages and old input
+            return res.status(400).render('register', {
+                errorMessages: errors.array(),
+                oldData: { email, username },
+            });
         }
 
-        if (password !== confirmPassword) {
-            return res.status(400).send('Passwords do not match.');
-        }
+        try {
+            // Hash the password
+            const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Password validation: At least 6 characters, one uppercase, one lowercase, one number, one special character
-        const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$/;
-        if (!passwordRegex.test(password)) {
-            return res.status(400).send('Password must be at least 6 characters long, include one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*).');
-        }
+            // Insert user into the database
+            const [result] = await req.db.query(
+                'INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
+                [username, hashedPassword, email]
+            );
 
-        if (username.length < 3) {
-            return res.status(400).send('Username must be at least 3 characters long.');
-        }
-
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Insert user into the database
-        const [result] = await req.db.query(
-            'INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
-            [username, hashedPassword, email]
-        );
-
-        if (result.affectedRows) {
-            res.redirect('/login'); // Redirect to login page
-        } else {
-            res.status(500).send('Error registering user.');
-        }
-    } catch (err) {
-        console.error(err);
-        if (err.code === 'ER_DUP_ENTRY') {
-            res.status(400).send('Username or email already exists.');
-        } else {
-            res.status(500).send('Internal server error.');
+            if (result.affectedRows) {
+                return res.redirect('/login'); // Redirect to login page
+            } else {
+                return res.status(500).render('register', {
+                    errorMessages: [{ msg: 'Error registering user.' }],
+                    oldData: { email, username },
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(400).render('register', {
+                    errorMessages: [{ msg: 'Username or email already exists.' }],
+                    oldData: { email, username },
+                });
+            } else {
+                return res.status(500).render('register', {
+                    errorMessages: [{ msg: 'Internal server error.' }],
+                    oldData: { email, username },
+                });
+            }
         }
     }
-});
+);
+
+
 
 
 // Login route
