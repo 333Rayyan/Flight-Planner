@@ -239,37 +239,51 @@ app.post(
 
 // Login route
 app.get('/login', (req, res) => {
-    res.render("login");
+    res.render("login", { errorMessages: [], oldData: {} });
 });
 
-app.post('/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
 
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const errorMessages = [];
+    const oldData = { username };
+
+    try {
+        // Check if username and password are provided
         if (!username || !password) {
-            return res.status(400).send('Username and password are required.');
+            if (!username) errorMessages.push({ msg: 'Username is required.' });
+            if (!password) errorMessages.push({ msg: 'Password is required.' });
+            return res.render('login', { errorMessages, oldData });
         }
 
+        // Query the database for the user
         const [rows] = await req.db.query('SELECT * FROM users WHERE username = ?', [username]);
         if (rows.length === 0) {
-            return res.status(400).send('Invalid username or password.');
+            errorMessages.push({ msg: 'Invalid username or password.' });
+            return res.render('login', { errorMessages, oldData });
         }
 
         const user = rows[0];
-        const isMatch = await bcrypt.compare(password, user.password);
 
+        // Check if the password matches
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).send('Invalid username or password.');
+            errorMessages.push({ msg: 'Invalid username or password.' });
+            return res.render('login', { errorMessages, oldData });
         }
 
+        // If login is successful, set the session
         req.session.user = { id: user.id, username: user.username };
         res.redirect(req.session.returnTo || '/');
         delete req.session.returnTo;
     } catch (err) {
         console.error(err);
-        res.status(500).send('Internal server error.');
+        errorMessages.push({ msg: 'Internal server error. Please try again later.' });
+        res.render('login', { errorMessages, oldData });
     }
 });
+
 
 // Logout route
 app.get('/logout', (req, res) => {
