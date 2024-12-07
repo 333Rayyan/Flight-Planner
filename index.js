@@ -96,6 +96,7 @@ const profileRoutes = require('./routes/profile');
 const flightRoutes = require('./routes/flights');
 const bookmarkRoutes = require('./routes/bookmarks');
 const homeRoutes = require('./routes/home');
+const apiRoutes = require("./routes/api");
 
 // Use routes
 app.use(authRoutes);
@@ -103,6 +104,8 @@ app.use(profileRoutes);
 app.use(flightRoutes);
 app.use(bookmarkRoutes);
 app.use(homeRoutes);
+app.use("/api", apiRoutes);
+
 
 // 404 Error Middleware
 app.use((req, res, next) => {
