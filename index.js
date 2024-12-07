@@ -104,6 +104,12 @@ app.use(flightRoutes);
 app.use(bookmarkRoutes);
 app.use(homeRoutes);
 
+// 404 Error Middleware
+app.use((req, res, next) => {
+    res.status(404).render('404');
+});
+
+
 // Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
