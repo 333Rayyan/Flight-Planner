@@ -45,7 +45,11 @@ router.post('/bookmark', isAuthenticated, async (req, res) => {
     }
 });
 
-router.post('/toggle-bookmark', isAuthenticated, async (req, res) => {
+router.post('/toggle-bookmark', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
     const { origin, destination, departureDate, returnDate, price } = req.body;
     const userId = req.session.user.id;
 

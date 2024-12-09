@@ -25,8 +25,8 @@ async function getAccessToken() {
     }
 }
 
-// Flight destinations route
-router.get('/flight-destinations', async (req, res) => {
+// Search flights route
+router.get('/search', async (req, res) => {
     let {
         originLocationCode,
         destinationLocationCode,
@@ -41,6 +41,16 @@ router.get('/flight-destinations', async (req, res) => {
     returnDate = returnDate || null;
     children = children ? parseInt(children) : 0;
     maxPrice = maxPrice ? parseInt(maxPrice) : 0;
+
+    if (!departureDate) {
+        return res.render('search', {
+            query: {
+                destinationLocationCode: destinationLocationCode || '',
+                originLocationCode: originLocationCode || '',
+            },
+            cities: req.app.locals.cities,
+        });
+    }
 
     try {
         const accessToken = await getAccessToken();
@@ -81,7 +91,7 @@ router.get('/flight-destinations', async (req, res) => {
         const offers = response.data.data || [];
         const dictionaries = response.data.dictionaries || {};
 
-        res.render('flight-destinations', {
+        res.render('flights', {
             cities: req.app.locals.citiesDict,
             offers: offers,
             startingLocation: originLocationCode,
@@ -94,19 +104,6 @@ router.get('/flight-destinations', async (req, res) => {
         console.error('Error fetching flight offers:', error.response?.data || error.message);
         res.status(500).send('Failed to fetch flight offers');
     }
-});
-
-// Search page route
-router.get('/search', (req, res) => {
-    const { destinationLocationCode, originLocationCode } = req.query;
-
-    res.render('search', {
-        query: {
-            destinationLocationCode: destinationLocationCode || '',
-            originLocationCode: originLocationCode || '',
-        },
-        cities: req.app.locals.cities,
-    });
 });
 
 module.exports = router;
