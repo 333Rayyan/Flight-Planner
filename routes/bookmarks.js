@@ -14,14 +14,20 @@ function isAuthenticated(req, res, next) {
 // Bookmarks route
 router.get('/bookmarks', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
+    const { destination } = req.query; // Extract destination from query parameters
 
     try {
-        const [bookmarks] = await db.query(
-            'SELECT id, origin, destination, departure_date, return_date, price FROM bookmarks WHERE user_id = ?',
-            [userId]
-        );
+        let query = 'SELECT id, origin, destination, departure_date, return_date, price FROM bookmarks WHERE user_id = ?';
+        const queryParams = [userId];
 
-        res.render('bookmarks', { bookmarks });
+        if (destination) {
+            query += ' AND destination LIKE ?'; // Add destination filter if provided
+            queryParams.push(`%${destination}%`);
+        }
+
+        const [bookmarks] = await db.query(query, queryParams);
+
+        res.render('bookmarks', { bookmarks, query: { destination } }); // Pass query for input persistence
     } catch (error) {
         console.error('Error fetching bookmarks:', error.message);
         res.status(500).send('Failed to fetch bookmarks.');

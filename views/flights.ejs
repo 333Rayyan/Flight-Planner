@@ -126,7 +126,8 @@
                                                                 <%= segment.departure.iataCode %>
                                                             </strong></p>
                                                         <p>
-                                                            <%= segment.departure.at.split("T")[0] %>
+                                                            <%= formatDate(segment.departure.at.split("T")[0]) %>
+
                                                         </p>
                                                         <p>
                                                             <%= segment.departure.at.split("T")[1] %>
@@ -147,7 +148,7 @@
                                                                 <%= segment.arrival.iataCode %>
                                                             </strong></p>
                                                         <p>
-                                                            <%= segment.arrival.at.split("T")[0] %>
+                                                            <%= formatDate(segment.arrival.at.split("T")[0]) %>
                                                         </p>
                                                         <p>
                                                             <%= segment.arrival.at.split("T")[1] %>

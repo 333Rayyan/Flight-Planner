@@ -91,6 +91,15 @@ router.get('/search', async (req, res) => {
         const offers = response.data.data || [];
         const dictionaries = response.data.dictionaries || {};
 
+        // Add the formatDate function here
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0'); // Get day
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-based index)
+            const year = date.getFullYear(); // Get year
+            return `${day}-${month}-${year}`; 
+        }
+
         res.render('flights', {
             cities: req.app.locals.citiesDict,
             offers: offers,
@@ -99,6 +108,7 @@ router.get('/search', async (req, res) => {
             aircraft: dictionaries.aircraft || {},
             bookmarkedOffers,
             user: req.session.user || null,
+            formatDate, // Pass the function to the EJS template
         });
     } catch (error) {
         console.error('Error fetching flight offers:', error.response?.data || error.message);
