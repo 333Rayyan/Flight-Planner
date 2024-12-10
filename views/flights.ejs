@@ -5,10 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flight Offers</title>
-    <!-- Bootstrap CSS and Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css">
+    <link href="/styles.css" rel="stylesheet">
     <style>
         .flight-card {
             border: 1px solid #ddd;
@@ -46,10 +45,8 @@
 </head>
 
 <body class="bg-light">
-    <!-- Header -->
     <%- include("partials/header") %>
 
-        <!-- Main Content -->
         <main class="container my-5">
             <h2 class="mb-4 text-center">Flight Results</h2>
 
@@ -59,7 +56,6 @@
                         <div class="col-12">
                             <div class="flight-card" onclick="toggleDetails('<%= offer.id %>')">
                                 <div class="row align-items-center">
-                                    <!-- Departure and Arrival Times -->
                                     <div class="col-md-4">
                                         <h5><strong>
                                                 <%= offer.itineraries[0].segments[0].departure.iataCode %>
@@ -69,32 +65,33 @@
                                             </strong></h5>
                                         <p>
                                             <strong>Departs:</strong>
-                                            <%= offer.itineraries[0].segments[0].departure.at.split("T")[1] %> <br>
+                                            <%= new Date(offer.itineraries[0].segments[0].departure.at).toLocaleDateString('en-GB') %> <br>
                                                 <strong>Arrives:</strong>
-                                                <%= offer.itineraries[0].segments[offer.itineraries[0].segments.length -
-                                                    1].arrival.at.split("T")[1] %>
+                                                <%= new Date(offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.at).toLocaleDateString('en-GB') %>
                                         </p>
                                     </div>
 
-                                    <!-- Price and Stops -->
                                     <div class="col-md-4">
                                         <p><strong>Price:</strong> £<%= offer.price.grandTotal %>
                                         </p>
                                         <p>
                                             <strong>Stops:</strong>
                                             <%= offer.itineraries[0].segments.length> 1 ?
-                                                offer.itineraries[0].segments.length - 1 + ' stop(s)' : 'Direct' %>
+                                                offer.itineraries[0].segments.length - 1 + ' Stop(s)' : 'None' %>
                                         </p>
                                     </div>
 
-                                    <!-- Bookmark Icon -->
                                     <div class="col-md-4 text-end">
-                                        <button class="btn p-0 bookmark-btn" data-offer-id="<%= offer.id %>"
+                                        <button class="btn p-0 bookmark-btn"
+                                            data-offer-id="<%= offer.id %>"
                                             data-origin="<%= offer.itineraries[0].segments[0].departure.iataCode %>"
+                                            data-start-location="<%= cities[startLocation] %>"
                                             data-destination="<%= offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.iataCode %>"
+                                            data-end-location="<%= cities[endLocation] %>"
                                             data-departure-date="<%= offer.itineraries[0].segments[0].departure.at %>"
-                                            data-return-date="<%= offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.at || null %>"
+                                            data-return-date="<%= offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.at%>"
                                             data-price="<%= offer.price.grandTotal %>">
+
                                             <% const isBookmarked=bookmarkedOffers.some(b=>
                                                 b.origin === offer.itineraries[0].segments[0].departure.iataCode &&
                                                 b.destination ===
@@ -112,66 +109,48 @@
                                     </div>
                                 </div>
 
-                                <!-- Details Container -->
                                 <div class="details-container mt-3" id="details-<%= offer.id %>">
-                                    <% offer.itineraries.forEach((itinerary, index)=> { %>
-                                        <% itinerary.segments.forEach((segment, i)=> { %>
-                                            <div class="card shadow p-4 mb-3">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <h6><strong>From:</strong>
-                                                            <%= cities[startingLocation] %>
-                                                        </h6>
-                                                        <p><strong>
-                                                                <%= segment.departure.iataCode %>
-                                                            </strong></p>
-                                                        <p>
-                                                            <%= formatDate(segment.departure.at.split("T")[0]) %>
-
-                                                        </p>
-                                                        <p>
-                                                            <%= segment.departure.at.split("T")[1] %>
-                                                        </p>
-                                                    </div>
-                                                    <div class="text-center">
-                                                        <i class="bi bi-airplane-fill rotate-plane"></i>
-                                                        <p class="mb-0"><strong>Flight Duration:</strong>
-                                                            <%= Math.floor((new Date(segment.arrival.at) - new Date(segment.departure.at)) / 3600000) %>H
-                                                            <%= Math.floor(((new Date(segment.arrival.at) - new Date(segment.departure.at)) % 3600000) / 60000) %>M
-                                                        </p>
-                                                    </div>
-                                                    <div>
-                                                        <h6><strong>To:</strong>
-                                                            <%= cities[segment.arrival.iataCode] %>
-                                                        </h6>
-                                                        <p><strong>
-                                                                <%= segment.arrival.iataCode %>
-                                                            </strong></p>
-                                                        <p>
-                                                            <%= formatDate(segment.arrival.at.split("T")[0]) %>
-                                                        </p>
-                                                        <p>
-                                                            <%= segment.arrival.at.split("T")[1] %>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div class="d-flex justify-content-between mt-3">
-                                                    <div>
-                                                        <p><strong>Carrier:</strong>
-                                                            <%= carriers[segment.carrierCode]
-                                                                || 'Unknown Carrier' %>
-                                                        </p>
-                                                    </div>
-                                                    <div>
-                                                        <p><strong>Aircraft:</strong>
-                                                            <%= aircraft[segment.aircraft.code]
-                                                                || 'Unknown Aircraft' %>
-                                                        </p>
-                                                    </div>
-                                                </div>
+                                    <div class="card shadow p-4 mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6>
+                                                    <strong>From:</strong> <%= cities[startLocation] %> (<%= offer.itineraries[0].segments[0].departure.iataCode %>)
+                                                </h6>
+                                                <p>
+                                                    <%= new Date(offer.itineraries[0].segments[0].departure.at).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/(\d{2}:\d{2}), (\d{2}\/\d{2}\/\d{4})/, '$1 $2') %>
+                                                </p>
                                             </div>
-                                        <% }) %>
-                                    <% }) %>
+                                            <div class="text-center">
+                                                <i class="bi bi-airplane-fill rotate-plane"></i>
+                                                <p class="mb-0"><strong>Flight Duration:</strong>
+                                                    <%= Math.floor((new Date(offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.at) - new
+                                                        Date(offer.itineraries[0].segments[0].departure.at)) / 3600000) %>H
+                                                        <%= Math.floor(((new Date(offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.at) - new
+                                                            Date(offer.itineraries[0].segments[0].departure.at)) % 3600000) / 60000) %>M
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <h6>
+                                                    <strong>To:</strong> <%= cities[endLocation] %> (<%= offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.iataCode %>)
+                                                </h6>
+                                                <p>
+                                                    <%= new Date(offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.at).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/(\d{2}:\d{2}), (\d{2}\/\d{2}\/\d{4})/, '$1 $2') %>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-3">
+                                            <div>
+                                                <p><strong>Carrier:</strong>
+                                                    <%= carriers[offer.itineraries[0].segments[0].carrierCode] %>
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p><strong>Aircraft:</strong>
+                                                    <%= aircraft[offer.itineraries[0].segments[0].aircraft.code] %>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -184,19 +163,15 @@
                     <% } %>
         </main>
 
-        <!-- Footer -->
         <%- include("partials/footer") %>
 
-            <!-- Bootstrap JS Bundle -->
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
             <script>
-                // Function to toggle details view
                 function toggleDetails(offerId) {
                     const details = document.getElementById(`details-${offerId}`);
                     details.classList.toggle("show");
                 }
 
-                // Format duration from PT1H20M to 1H 20M
                 function formatDuration(duration) {
                     const hoursMatch = duration.match(/(\d+)H/);
                     const minutesMatch = duration.match(/(\d+)M/);
@@ -205,7 +180,6 @@
                     return `${hours} ${minutes}`.trim();
                 }
 
-                // Apply formatting after page loads
                 document.addEventListener('DOMContentLoaded', () => {
                     document.querySelectorAll('[id^="duration-"]').forEach((element) => {
                         const rawDuration = element.textContent;
@@ -213,25 +187,28 @@
                     });
                 });
 
-                // Function to toggle bookmark status
                 document.querySelectorAll('.bookmark-btn').forEach(button => {
                     button.addEventListener('click', async (e) => {
-                        e.stopPropagation(); // Prevent triggering other click events
+                        e.stopPropagation();
 
                         const origin = button.dataset.origin;
+                        const startLocation = button.dataset.startLocation;
                         const destination = button.dataset.destination;
+                        const endLocation = button.dataset.endLocation;
                         const departureDate = button.dataset.departureDate;
-                        const returnDate = button.dataset.returnDate || null;
+                        const returnDate = button.dataset.returnDate;
                         const price = button.dataset.price;
 
-                        const response = await fetch('/toggle-bookmark', {
+                        const response = await fetch('/bookmarks/toggle', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
                                 origin,
+                                startLocation,
                                 destination,
+                                endLocation,
                                 departureDate,
                                 returnDate,
                                 price,

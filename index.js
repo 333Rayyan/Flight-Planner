@@ -3,17 +3,14 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const path = require("path");
 const session = require("express-session");
-const db = require('./db'); 
+require('dotenv').config();
 
-
+const db = require('./db');
 
 const app = express();
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 app.use(express.json());
-
-
-// Middleware setup
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -25,13 +22,11 @@ app.use(session({
     saveUninitialized: true,
 }));
 
-// Middleware to make the user session available in all views
 app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     next();
 });
 
-// Predefined list of cities with IATA codes
 const cities = [
     { name: "Amsterdam", code: "AMS" },
     { name: "Barcelona", code: "BCN" },
@@ -80,17 +75,14 @@ const cities = [
     { name: "Zurich", code: "ZRH" }
 ];
 
-// Convert the cities array to a dictionary
 const citiesDict = cities.reduce((acc, city) => {
     acc[city.code] = city.name;
     return acc;
 }, {});
 
-// Make cities and citiesDict available in all views
 app.locals.cities = cities;
 app.locals.citiesDict = citiesDict;
 
-// Import routes
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
 const flightRoutes = require('./routes/flights');
@@ -98,22 +90,17 @@ const bookmarkRoutes = require('./routes/bookmarks');
 const homeRoutes = require('./routes/home');
 const apiRoutes = require("./routes/api");
 
-// Use routes
 app.use(authRoutes);
 app.use(profileRoutes);
 app.use(flightRoutes);
 app.use(bookmarkRoutes);
 app.use(homeRoutes);
-app.use("/api", apiRoutes);
+app.use(apiRoutes);
 
-
-// 404 Error Middleware
 app.use((req, res, next) => {
     res.status(404).render('404');
 });
 
-
-// Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is Running on Port ${PORT}`);
 });

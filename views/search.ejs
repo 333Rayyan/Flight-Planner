@@ -1,84 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Search Flights</title>
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Flights</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/styles.css" rel="stylesheet">
 </head>
+
 <body class="bg-light">
-  <%- include("partials/header") %>
-  <main class="container py-5">
-    <section class="card shadow p-4">
-      <h1 class="text-center mb-4">Search for Flights</h1>
-      <!-- Update form action to /search -->
-      <form action="/search" method="GET">
-        <div class="mb-3">
-          <label for="origin" class="form-label">Starting Location:</label>
-          <select id="origin" name="originLocationCode" class="form-select" required>
-            <% cities.forEach(city => { %>
-              <option value="<%= city.code %>" <%= (query && query.originLocationCode ? query.originLocationCode : 'LON') === city.code ? 'selected' : '' %>><%= city.name %></option>
-            <% }) %>
-          </select>
-        </div>
+    <%- include("partials/header") %>
+        <main class="container py-5">
+            <section class="card shadow p-4">
+                <h1 class="text-center mb-4">Search for Flights</h1>
+                <form action="/search" method="GET">
+                    <div class="mb-3">
+                        <label for="origin" class="form-label">Starting Location:</label>
+                        <select id="origin" name="originLocationCode" class="form-select" required>
+                            <% cities.forEach(city=> { %>
+                                <option value="<%= city.code %>" <%=(query && query.originLocationCode ?
+                                    query.originLocationCode : 'LON' )===city.code ? 'selected' : '' %>><%= city.name %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
 
-        <div class="mb-3">
-          <label for="destination" class="form-label">Destination:</label>
-          <select id="destination" name="destinationLocationCode" class="form-select">
-            <option value="">Any</option>
-            <% cities.forEach(city => { %>
-              <option value="<%= city.code %>" <%= query && query.destinationLocationCode === city.code ? 'selected' : '' %>><%= city.name %></option>
-            <% }) %>
-          </select>
-        </div>
+                    <div class="mb-3">
+                        <label for="destination" class="form-label">Destination:</label>
+                        <select id="destination" name="destinationLocationCode" class="form-select">
+                            <option value="">Any</option>
+                            <% cities.forEach(city=> { %>
+                                <option value="<%= city.code %>" <%=query && query.destinationLocationCode===city.code
+                                    ? 'selected' : '' %>><%= city.name %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
 
-        <div class="mb-3">
-          <label for="departureDate" class="form-label">Departure Date:</label>
-          <input type="date" id="departureDate" name="departureDate" class="form-control" value="<%= query && query.departureDate ? query.departureDate : '' %>" required>
-        </div>
+                    <div class="mb-3">
+                        <label for="departureDate" class="form-label">Departure Date:</label>
+                        <input type="date" id="departureDate" name="departureDate" class="form-control"
+                            value="<%= query && query.departureDate ? query.departureDate : '' %>" required>
+                    </div>
 
-        <div class="mb-3">
-          <label for="returnDate" class="form-label">Return Date:</label>
-          <input type="date" id="returnDate" name="returnDate" class="form-control" value="<%= query && query.returnDate ? query.returnDate : '' %>">
-        </div>
+                    <div class="mb-3">
+                        <label for="returnDate" class="form-label">Return Date:</label>
+                        <input type="date" id="returnDate" name="returnDate" class="form-control"
+                            value="<%= query && query.returnDate ? query.returnDate : '' %>">
+                    </div>
 
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label for="adults" class="form-label">Adults:</label>
-            <input type="number" id="adults" name="adults" class="form-control" value="<%= query && query.adults ? query.adults : 1 %>" min="1" max="9" required>
-          </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="adults" class="form-label">Adults:</label>
+                            <input type="number" id="adults" name="adults" class="form-control"
+                                value="<%= query && query.adults ? query.adults : 1 %>" min="1" max="9" required>
+                        </div>
 
-          <div class="col-md-6">
-            <label for="children" class="form-label">Children:</label>
-            <input type="number" id="children" name="children" class="form-control" value="<%= query && query.children ? query.children : 0 %>" min="0" max="9">
-          </div>
-        </div>
+                        <div class="col-md-6">
+                            <label for="children" class="form-label">Children:</label>
+                            <input type="number" id="children" name="children" class="form-control"
+                                value="<%= query && query.children ? query.children : 0 %>" min="0" max="9">
+                        </div>
+                    </div>
 
-        <div class="mb-3 mt-3">
-          <label for="maxPrice" class="form-label">Max Price (GBP):</label>
-          <input type="number" id="maxPrice" name="maxPrice" class="form-control" value="<%= query && query.maxPrice ? query.maxPrice : '' %>" placeholder="Enter max price">
-        </div>
+                    <div class="mb-3 mt-3">
+                        <label for="maxPrice" class="form-label">Max Price (GBP):</label>
+                        <input type="number" id="maxPrice" name="maxPrice" class="form-control"
+                            value="<%= query && query.maxPrice ? query.maxPrice : '' %>" placeholder="Enter max price">
+                    </div>
 
-        <button type="submit" class="btn btn-primary w-100">Search Flights</button>
-      </form>
-    </section>
-  </main>
-  <%- include("partials/footer") %>
-  
-  <!-- Bootstrap JS Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Prevent origin and destination from being the same
-    document.querySelector('form').addEventListener('submit', function (event) {
-      const origin = document.getElementById('origin').value;
-      const destination = document.getElementById('destination').value;
+                    <button type="submit" class="btn btn-primary w-100">Search Flights</button>
+                </form>
+            </section>
+        </main>
+        <%- include("partials/footer") %>
 
-      if (origin === destination && destination !== "") {
-        alert('Origin and destination cannot be the same.');
-        event.preventDefault(); // Prevent form submission
-      }
-    });
-  </script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <script>
+                document.querySelector('form').addEventListener('submit', function (event) {
+                    const origin = document.getElementById('origin').value;
+                    const destination = document.getElementById('destination').value;
+
+                    if (origin === destination && destination !== "") {
+                        alert('Origin and destination cannot be the same.');
+                        event.preventDefault();
+                    }
+                });
+            </script>
 </body>
+
 </html>

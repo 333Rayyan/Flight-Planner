@@ -1,8 +1,9 @@
 const express = require('express');
-const router = express.Router();
 const db = require('../db');
 
-// Middleware to protect routes
+const router = express.Router();
+
+
 function isAuthenticated(req, res, next) {
     if (req.session.user) {
         return next();
@@ -11,67 +12,91 @@ function isAuthenticated(req, res, next) {
     res.redirect('/login');
 }
 
-// Bookmarks route
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${hours}:${minutes} ${day}/${month}/${year}`;
+}
+
 router.get('/bookmarks', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
-    const { destination } = req.query; // Extract destination from query parameters
 
     try {
-        let query = 'SELECT id, origin, destination, departure_date, return_date, price FROM bookmarks WHERE user_id = ?';
-        const queryParams = [userId];
+        const [bookmarks] = await db.query(
+            'SELECT * FROM bookmarks WHERE user_id = ?',
+            [userId]
+        );
+        
+        bookmarks.forEach(bookmark => {
+            bookmark.departure_date = formatDate(bookmark.departure_date);
+            bookmark.return_date = bookmark.return_date ? formatDate(bookmark.return_date) : "N/A";
+        });
 
-        if (destination) {
-            query += ' AND destination LIKE ?'; // Add destination filter if provided
-            queryParams.push(`%${destination}%`);
-        }
-
-        const [bookmarks] = await db.query(query, queryParams);
-
-        res.render('bookmarks', { bookmarks, query: { destination } }); // Pass query for input persistence
+        res.render('bookmarks', {
+            bookmarks,
+            query: null, 
+        });
     } catch (error) {
         console.error('Error fetching bookmarks:', error.message);
         res.status(500).send('Failed to fetch bookmarks.');
     }
 });
 
-router.post('/bookmark', isAuthenticated, async (req, res) => {
-    const { origin, destination, departureDate, returnDate, price } = req.body;
+
+router.get('/bookmarks/search', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
+    const query = req.query.query;
 
     try {
-        await db.query(
-            'INSERT INTO bookmarks (user_id, origin, destination, departure_date, return_date, price) VALUES (?, ?, ?, ?, ?, ?)',
-            [userId, origin, destination, departureDate, returnDate || null, price]
+        const [bookmarks] = await db.query(
+            'SELECT * FROM bookmarks WHERE user_id = ? AND (origin LIKE ? OR destination LIKE ? OR start_location LIKE ? OR end_location LIKE ?)',
+            [userId, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`]
         );
 
-        res.redirect('/bookmarks');
+        bookmarks.forEach(bookmark => {
+            bookmark.departure_date = formatDate(bookmark.departure_date);
+            bookmark.return_date = formatDate(bookmark.return_date);
+        });
+
+        res.render('bookmarks', {
+            bookmarks,
+            query, 
+        });
     } catch (error) {
-        console.error('Error saving bookmark:', error.message);
-        res.status(500).send('Failed to bookmark flight.');
+        console.error('Error searching bookmarks:', error.message);
+        res.status(500).send('Failed to search bookmarks.');
     }
 });
 
-router.post('/toggle-bookmark', async (req, res) => {
+
+router.post('/bookmarks/toggle', async (req, res) => {
     if (!req.session.user) {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const { origin, destination, departureDate, returnDate, price } = req.body;
+    const { origin, startLocation, destination, endLocation, departureDate, returnDate, price } = req.body;
     const userId = req.session.user.id;
-
+    
     try {
         const [existing] = await db.query(
-            'SELECT id FROM bookmarks WHERE user_id = ? AND origin = ? AND destination = ? AND departure_date = ? AND return_date = ?',
-            [userId, origin, destination, departureDate, returnDate || null]
+            'SELECT id FROM bookmarks WHERE user_id = ? AND origin = ? AND start_location = ? AND destination = ? AND end_location = ? AND departure_date = ? AND return_date = ? AND price = ?',
+            [userId, origin, startLocation, destination, endLocation, departureDate, returnDate, price]
         );
 
         if (existing.length > 0) {
             await db.query('DELETE FROM bookmarks WHERE id = ?', [existing[0].id]);
             return res.json({ success: true, bookmarked: false });
         } else {
+            const departureDateTime = new Date(departureDate).toISOString().slice(0, 19).replace('T', ' ');
+            const returnDateTime = new Date(returnDate).toISOString().slice(0, 19).replace('T', ' ');
+
             await db.query(
-                'INSERT INTO bookmarks (user_id, origin, destination, departure_date, return_date, price) VALUES (?, ?, ?, ?, ?, ?)',
-                [userId, origin, destination, departureDate, returnDate || null, price]
+                'INSERT INTO bookmarks (user_id, origin, start_location, destination, end_location, departure_date, return_date, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [userId, origin, startLocation, destination, endLocation, departureDateTime, returnDateTime, price]
             );
             return res.json({ success: true, bookmarked: true });
         }
@@ -81,25 +106,26 @@ router.post('/toggle-bookmark', async (req, res) => {
     }
 });
 
-router.post('/remove-bookmark', isAuthenticated, async (req, res) => {
-    const { bookmarkId } = req.body;
+router.delete('/bookmarks/:id', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
+    const bookmarkId = req.params.id;
 
     try {
-        const [result] = await db.query(
+        const [deleted] = await db.query(
             'DELETE FROM bookmarks WHERE id = ? AND user_id = ?',
             [bookmarkId, userId]
         );
 
-        if (result.affectedRows === 0) {
-            console.error('Bookmark not found or does not belong to the user.');
+        if (deleted.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Bookmark not found' });
         }
 
-        res.redirect('/bookmarks');
+        res.json({ success: true });
     } catch (error) {
-        console.error('Error removing bookmark:', error.message);
-        res.status(500).send('Failed to remove bookmark.');
+        console.error('Error deleting bookmark:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to delete bookmark.' });
     }
 });
+
 
 module.exports = router;

@@ -1,13 +1,15 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
-const router = express.Router();
 const db = require('../db');
 
-// Register route
+const router = express.Router();
+
+
 router.get('/register', (req, res) => {
     res.render("register", { errorMessages: [], formData: {}, oldData: {} });
 });
+
 
 router.post(
     '/register',
@@ -67,10 +69,11 @@ router.post(
     }
 );
 
-// Login route
+
 router.get('/login', (req, res) => {
     res.render("login", { errorMessages: [], oldData: {} });
 });
+
 
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
@@ -107,7 +110,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Logout route
+
 router.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -117,5 +120,6 @@ router.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
+
 
 module.exports = router;

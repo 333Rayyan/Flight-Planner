@@ -1,16 +1,17 @@
 const express = require('express');
 const axios = require('axios');
-const router = express.Router();
 const db = require('../db');
 
-// Function to generate an access token
+const router = express.Router();
+
+
 async function getAccessToken() {
     try {
         const response = await axios.post('https://test.api.amadeus.com/v1/security/oauth2/token',
             new URLSearchParams({
                 grant_type: 'client_credentials',
-                client_id: 'hgLnJgnec1qsOZjH4jiBC5UJMqf1r0hA',
-                client_secret: 'mBf6GiYz7iIoTj17',
+                client_id: process.env.API_CLIENT_ID,
+                client_secret: process.env.API_CLIENT_SECRET,
             }).toString(),
             {
                 headers: {
@@ -25,7 +26,7 @@ async function getAccessToken() {
     }
 }
 
-// Search flights route
+
 router.get('/search', async (req, res) => {
     let {
         originLocationCode,
@@ -37,7 +38,7 @@ router.get('/search', async (req, res) => {
         maxPrice,
     } = req.query;
 
-    originLocationCode = originLocationCode || 'LON';
+    originLocationCode = originLocationCode;
     returnDate = returnDate || null;
     children = children ? parseInt(children) : 0;
     maxPrice = maxPrice ? parseInt(maxPrice) : 0;
@@ -77,13 +78,13 @@ router.get('/search', async (req, res) => {
             },
             params: {
                 originLocationCode,
-                destinationLocationCode: destinationLocationCode || undefined,
+                destinationLocationCode,
                 departureDate,
                 returnDate,
                 adults: parseInt(adults),
                 children: parseInt(children),
                 currencyCode: "GBP",
-                maxPrice: maxPrice || undefined,
+                maxPrice: maxPrice || null,
                 max: 50,
             },
         });
@@ -91,29 +92,21 @@ router.get('/search', async (req, res) => {
         const offers = response.data.data || [];
         const dictionaries = response.data.dictionaries || {};
 
-        // Add the formatDate function here
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            const day = String(date.getDate()).padStart(2, '0'); // Get day
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-based index)
-            const year = date.getFullYear(); // Get year
-            return `${day}-${month}-${year}`; 
-        }
-
         res.render('flights', {
             cities: req.app.locals.citiesDict,
             offers: offers,
-            startingLocation: originLocationCode,
+            startLocation: originLocationCode,
+            endLocation: destinationLocationCode,
             carriers: dictionaries.carriers || {},
             aircraft: dictionaries.aircraft || {},
             bookmarkedOffers,
             user: req.session.user || null,
-            formatDate, // Pass the function to the EJS template
         });
     } catch (error) {
         console.error('Error fetching flight offers:', error.response?.data || error.message);
         res.status(500).send('Failed to fetch flight offers');
     }
 });
+
 
 module.exports = router;
