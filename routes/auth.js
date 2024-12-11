@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
+const axios = require('axios'); // Required to verify hCaptcha token
 const db = require('../db');
 
 const router = express.Router();
@@ -23,10 +24,11 @@ router.post(
             }
             return true;
         }),
+        body('h-captcha-response').notEmpty().withMessage('Captcha verification failed'), // Ensure hCaptcha response is present
     ],
     async (req, res) => {
         const errors = validationResult(req);
-        const { email, username, password } = req.body;
+        const { email, username, password, 'h-captcha-response': captchaToken } = req.body;
 
         if (!errors.isEmpty()) {
             return res.status(400).render('register', {
@@ -35,6 +37,33 @@ router.post(
             });
         }
 
+        // Verify the hCaptcha response
+        try {
+            const captchaSecret = process.env.HCAPTCHA_SECRET_KEY; // Ensure this is set in your .env file
+            const captchaVerifyURL = 'https://hcaptcha.com/siteverify';
+
+            const captchaResponse = await axios.post(captchaVerifyURL, null, {
+                params: {
+                    secret: captchaSecret,
+                    response: captchaToken,
+                },
+            });
+
+            if (!captchaResponse.data.success) {
+                return res.status(400).render('register', {
+                    errorMessages: [{ msg: 'Captcha verification failed. Please try again.' }],
+                    oldData: { email, username },
+                });
+            }
+        } catch (captchaError) {
+            console.error('Captcha verification error:', captchaError.message);
+            return res.status(500).render('register', {
+                errorMessages: [{ msg: 'Internal error during captcha verification.' }],
+                oldData: { email, username },
+            });
+        }
+
+        // If captcha is verified, continue with registration
         try {
             const hashedPassword = await bcrypt.hash(password, 10);
             const [result] = await db.pool.query(
