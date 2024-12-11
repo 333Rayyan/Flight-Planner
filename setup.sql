@@ -2,7 +2,7 @@ CREATE USER IF NOT EXISTS 'flightPlannerApp'@'localhost' IDENTIFIED WITH 'mysql_
 GRANT ALL PRIVILEGES ON *.* TO 'flightPlannerApp'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
-CREATE DATABASE flightPlanner;
+CREATE DATABASE IF NOT EXISTS flightPlanner;
 USE flightPlanner;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -24,3 +24,48 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     price DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
+DELIMITER //
+
+CREATE PROCEDURE AddBookmark(
+    IN userId INT,
+    IN originCode VARCHAR(3),
+    IN startLocation VARCHAR(255),
+    IN destinationCode VARCHAR(3),
+    IN endLocation VARCHAR(255),
+    IN departure DATETIME,
+    IN returnDate DATETIME,
+    IN flightPrice DECIMAL(10, 2)
+)
+BEGIN
+    INSERT INTO bookmarks (user_id, origin, start_location, destination, end_location, departure_date, return_date, price)
+    VALUES (userId, originCode, startLocation, destinationCode, endLocation, departure, returnDate, flightPrice);
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE PROCEDURE GetBookmarksByUser(IN userId INT)
+BEGIN
+    SELECT id, origin, start_location, destination, end_location, departure_date, return_date, price
+    FROM bookmarks
+    WHERE user_id = userId
+    ORDER BY departure_date ASC;
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE PROCEDURE DeleteBookmark(IN bookmarkId INT)
+BEGIN
+    DELETE FROM bookmarks
+    WHERE id = bookmarkId;
+END //
+
+DELIMITER ;
+

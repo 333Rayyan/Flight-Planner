@@ -16,7 +16,7 @@ function isAuthenticated(req, res, next) {
 // Profile route
 router.get('/profile', isAuthenticated, async (req, res) => {
     try {
-        const [user] = await db.query(
+        const [user] = await db.pool.query(
             'SELECT id, username, email FROM users WHERE id = ?',
             [req.session.user.id]
         );
@@ -59,7 +59,7 @@ router.post('/profile/change-password', isAuthenticated, async (req, res) => {
             return res.redirect('/profile');
         }
 
-        const [rows] = await db.query('SELECT password FROM users WHERE id = ?', [req.session.user.id]);
+        const [rows] = await db.pool.query('SELECT password FROM users WHERE id = ?', [req.session.user.id]);
         if (rows.length === 0) {
             req.session.error = 'User not found.';
             return res.redirect('/logout');
@@ -73,7 +73,7 @@ router.post('/profile/change-password', isAuthenticated, async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.session.user.id]);
+        await db.pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.session.user.id]);
 
         req.session.message = 'Password successfully updated.';
         res.redirect('/profile');
@@ -88,7 +88,7 @@ router.post('/profile/delete', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
 
     try {
-        await db.query('DELETE FROM users WHERE id = ?', [userId]);
+        await db.pool.query('DELETE FROM users WHERE id = ?', [userId]);
 
         req.session.destroy((err) => {
             if (err) {

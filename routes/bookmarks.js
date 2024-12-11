@@ -1,9 +1,9 @@
 const express = require('express');
-const db = require('../db');
+const { callStoredProcedure } = require('../db');
 
 const router = express.Router();
 
-
+// Middleware to check user authentication
 function isAuthenticated(req, res, next) {
     if (req.session.user) {
         return next();
@@ -12,7 +12,9 @@ function isAuthenticated(req, res, next) {
     res.redirect('/login');
 }
 
+// Utility function to format dates
 function formatDate(dateString) {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -22,24 +24,22 @@ function formatDate(dateString) {
     return `${hours}:${minutes} ${day}/${month}/${year}`;
 }
 
+// Fetch all bookmarks for the authenticated user
 router.get('/bookmarks', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
 
     try {
-        const [bookmarks] = await db.query(
-            'SELECT * FROM bookmarks WHERE user_id = ?',
-            [userId]
-        );
-        
+        const bookmarks = await callStoredProcedure('GetBookmarksByUser', [userId]);
+
+        // Format dates for display
         bookmarks.forEach(bookmark => {
             bookmark.departure_date = formatDate(bookmark.departure_date);
             bookmark.return_date = formatDate(bookmark.return_date);
-            console.log(bookmark.departure_date, bookmark.return_date);
         });
 
         res.render('bookmarks', {
             bookmarks,
-            query: null, 
+            query: null, // No search query
         });
     } catch (error) {
         console.error('Error fetching bookmarks:', error.message);
@@ -47,25 +47,29 @@ router.get('/bookmarks', isAuthenticated, async (req, res) => {
     }
 });
 
-
+// Search bookmarks based on user query
 router.get('/bookmarks/search', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
-    const query = req.query.query;
+    const query = req.query.query || '';
 
     try {
-        const [bookmarks] = await db.query(
-            'SELECT * FROM bookmarks WHERE user_id = ? AND (origin LIKE ? OR destination LIKE ? OR start_location LIKE ? OR end_location LIKE ?)',
-            [userId, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`]
+        const bookmarks = await callStoredProcedure('GetBookmarksByUser', [userId]);
+
+        // Filter bookmarks based on search query
+        const filteredBookmarks = bookmarks.filter(bookmark =>
+            [bookmark.origin, bookmark.destination, bookmark.start_location, bookmark.end_location]
+                .some(field => field.toLowerCase().includes(query.toLowerCase()))
         );
 
-        bookmarks.forEach(bookmark => {
+        // Format dates for display
+        filteredBookmarks.forEach(bookmark => {
             bookmark.departure_date = formatDate(bookmark.departure_date);
             bookmark.return_date = formatDate(bookmark.return_date);
         });
 
         res.render('bookmarks', {
-            bookmarks,
-            query, 
+            bookmarks: filteredBookmarks,
+            query, // Preserve search query in input
         });
     } catch (error) {
         console.error('Error searching bookmarks:', error.message);
@@ -81,52 +85,76 @@ router.post('/bookmarks/toggle', async (req, res) => {
 
     const { origin, startLocation, destination, endLocation, departureDate, returnDate, price } = req.body;
     const userId = req.session.user.id;
-    
+
     try {
-        const [existing] = await db.query(
-            'SELECT id FROM bookmarks WHERE user_id = ? AND origin = ? AND start_location = ? AND destination = ? AND end_location = ? AND departure_date = ? AND return_date = ? AND price = ?',
-            [userId, origin, startLocation, destination, endLocation, departureDate, returnDate, price]
+        // Convert dates to MySQL format
+        const formattedDepartureDate = new Date(departureDate).toISOString().slice(0, 19).replace('T', ' ');
+        const formattedReturnDate = returnDate ? new Date(returnDate).toISOString().slice(0, 19).replace('T', ' ') : null;
+
+        // console.log('Checking if bookmark exists for:', {
+        //     userId,
+        //     origin,
+        //     startLocation,
+        //     destination,
+        //     endLocation,
+        //     formattedDepartureDate,
+        //     formattedReturnDate,
+        //     price,
+        // });
+
+        // Check if the bookmark already exists
+        const existingBookmarks = await callStoredProcedure('GetBookmarksByUser', [userId]);
+        const existingBookmark = existingBookmarks.find(
+            bookmark =>
+                bookmark.origin === origin &&
+                bookmark.start_location === startLocation &&
+                bookmark.destination === destination &&
+                bookmark.end_location === endLocation &&
+                bookmark.departure_date === formattedDepartureDate &&
+                bookmark.return_date === formattedReturnDate &&
+                parseFloat(bookmark.price) === parseFloat(price)
         );
 
-        if (existing.length > 0) {
-            await db.query('DELETE FROM bookmarks WHERE id = ?', [existing[0].id]);
+        if (existingBookmark) {
+
+
+            await callStoredProcedure('DeleteBookmark', [existingBookmark.id]);
+
             return res.json({ success: true, bookmarked: false });
         } else {
-            const departureDateTime = new Date(departureDate).toISOString().slice(0, 19).replace('T', ' ');
-            const returnDateTime = new Date(returnDate).toISOString().slice(0, 19).replace('T', ' ');
 
-            await db.query(
-                'INSERT INTO bookmarks (user_id, origin, start_location, destination, end_location, departure_date, return_date, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [userId, origin, startLocation, destination, endLocation, departureDateTime, returnDateTime, price]
-            );
+
+            await callStoredProcedure('AddBookmark', [
+                userId,
+                origin,
+                startLocation,
+                destination,
+                endLocation,
+                formattedDepartureDate,
+                formattedReturnDate,
+                price,
+            ]);
+  
             return res.json({ success: true, bookmarked: true });
         }
     } catch (error) {
-        console.error('Error toggling bookmark:', error.message);
+        console.error('Error toggling bookmark:', error.message, error.stack);
         res.status(500).json({ success: false, message: 'Failed to toggle bookmark.' });
     }
 });
 
+
+// Delete a bookmark by ID
 router.delete('/bookmarks/:id', isAuthenticated, async (req, res) => {
-    const userId = req.session.user.id;
     const bookmarkId = req.params.id;
 
     try {
-        const [deleted] = await db.query(
-            'DELETE FROM bookmarks WHERE id = ? AND user_id = ?',
-            [bookmarkId, userId]
-        );
-
-        if (deleted.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Bookmark not found' });
-        }
-
+        await callStoredProcedure('DeleteBookmark', [bookmarkId]);
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting bookmark:', error.message);
         res.status(500).json({ success: false, message: 'Failed to delete bookmark.' });
     }
 });
-
 
 module.exports = router;

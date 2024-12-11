@@ -1,9 +1,9 @@
 const express = require('express');
 const axios = require('axios');
 const db = require('../db');
+const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
-
 
 async function getAccessToken() {
     try {
@@ -19,13 +19,13 @@ async function getAccessToken() {
                 },
             }
         );
+
         return response.data.access_token;
     } catch (error) {
         console.error('Error generating access token:', error.response?.data || error.message);
         throw new Error('Failed to get access token');
     }
 }
-
 
 router.get('/search', async (req, res) => {
     let {
@@ -44,6 +44,7 @@ router.get('/search', async (req, res) => {
     maxPrice = maxPrice ? parseInt(maxPrice) : 0;
 
     if (!departureDate) {
+        console.log('No departure date provided, rendering search form...');
         return res.render('search', {
             query: {
                 destinationLocationCode: destinationLocationCode || '',
@@ -59,10 +60,9 @@ router.get('/search', async (req, res) => {
         let bookmarks = [];
         if (req.session.user) {
             const userId = req.session.user.id;
-            [bookmarks] = await db.query(
-                `SELECT origin, destination, departure_date, return_date FROM bookmarks WHERE user_id = ?`,
-                [userId]
-            );
+            console.log(`Fetching bookmarks for user ID: ${userId}`);
+            bookmarks = await db.callStoredProcedure('GetBookmarksByUser', [userId]);
+            console.log('User bookmarks:', bookmarks);
         }
 
         const bookmarkedOffers = bookmarks.map(b => JSON.stringify({
@@ -108,5 +108,6 @@ router.get('/search', async (req, res) => {
     }
 });
 
-
 module.exports = router;
+
+

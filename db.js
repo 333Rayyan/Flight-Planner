@@ -7,4 +7,21 @@ const pool = mysql.createPool({
     database: "flightPlanner",
 });
 
-module.exports = pool;
+async function callStoredProcedure(procedureName, params = []) {
+    try {
+        const placeholders = params.map(() => "?").join(", "); 
+        const query = `CALL ${procedureName}(${placeholders});`;
+
+        const [rows] = await pool.query(query, params);
+
+        return rows[0] || [];
+    } catch (error) {
+        console.error(`Error calling stored procedure ${procedureName}:`, error.message);
+        throw error;
+    }
+}
+
+module.exports = {
+    pool,
+    callStoredProcedure, 
+};

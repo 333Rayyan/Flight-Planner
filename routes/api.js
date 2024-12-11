@@ -16,7 +16,7 @@ router.get('/api/bookmarks', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
 
     try {
-        const [bookmarks] = await db.query(
+        const [bookmarks] = await db.pool.query(
             'SELECT id, origin, destination, departure_date, return_date, price FROM bookmarks WHERE user_id = ?',
             [userId]
         );
@@ -34,7 +34,7 @@ router.delete('/api/bookmarks/:id', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
 
     try {
-        const [result] = await db.query(
+        const [result] = await db.pool.query(
             'DELETE FROM bookmarks WHERE id = ? AND user_id = ?',
             [bookmarkId, userId]
         );

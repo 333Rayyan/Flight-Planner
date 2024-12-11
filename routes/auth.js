@@ -5,11 +5,9 @@ const db = require('../db');
 
 const router = express.Router();
 
-
 router.get('/register', (req, res) => {
     res.render("register", { errorMessages: [], formData: {}, oldData: {} });
 });
-
 
 router.post(
     '/register',
@@ -39,7 +37,7 @@ router.post(
 
         try {
             const hashedPassword = await bcrypt.hash(password, 10);
-            const [result] = await db.query(
+            const [result] = await db.pool.query(
                 'INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
                 [username, hashedPassword, email]
             );
@@ -69,11 +67,9 @@ router.post(
     }
 );
 
-
 router.get('/login', (req, res) => {
     res.render("login", { errorMessages: [], oldData: {} });
 });
-
 
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
@@ -87,7 +83,7 @@ router.post('/login', async (req, res) => {
             return res.render('login', { errorMessages, oldData });
         }
 
-        const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+        const [rows] = await db.pool.query('SELECT * FROM users WHERE username = ?', [username]);
         if (rows.length === 0) {
             errorMessages.push({ msg: 'Invalid username or password.' });
             return res.render('login', { errorMessages, oldData });
@@ -110,7 +106,6 @@ router.post('/login', async (req, res) => {
     }
 });
 
-
 router.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -120,6 +115,5 @@ router.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
-
 
 module.exports = router;

@@ -39,9 +39,9 @@
                 </div>
             </form>
 
-            <% if (bookmarks.length> 0) { %>
+            <% if (bookmarks.length > 0) { %>
                 <div class="row">
-                    <% bookmarks.forEach(bookmark=> { %>
+                    <% bookmarks.forEach(bookmark => { %>
                         <div class="col-12">
                             <div class="flight-card" onclick="showDetails('<%= bookmark.id %>', '<%= bookmark.start_location %>', '<%= bookmark.end_location %>', '<%= bookmark.origin %>', '<%= bookmark.destination %>', '<%= bookmark.departure_date %>', '<%= bookmark.return_date %>', '<%= bookmark.price %>')">
                                 <div class="row align-items-center">
@@ -77,13 +77,13 @@
                 </div>
                 <% } else { %>
                     <div class="alert alert-warning text-center" role="alert">
-                        <% if (query && query.end_location) { %>
-                            No bookmarks found for location "<%= query.end_location %>".
-                                <% } else { %>
-                                    You have no bookmarked flights.
-                                    <% } %>
+                        <% if (query) { %>
+                            No bookmarks found for location "<%= query %>".
+                        <% } else { %>
+                            You have no bookmarked flights.
+                        <% } %>
                     </div>
-                    <% } %>
+                <% } %>
         </main>
 
         <div id="detailsModal" class="modal fade" tabindex="-1" aria-hidden="true">
@@ -96,18 +96,13 @@
                     <div class="modal-body">
                         <p><strong>From:</strong> <span id="modalStartLocation"></span> (<span id="modalOrigin"></span>)
                         </p>
-                        <p><strong>To:</strong> <span id="modalEndLocation"></span> (<span
-                                id="modalDestination"></span>)</p>
+                        <p><strong>To:</strong> <span id="modalEndLocation"></span> (<span id="modalDestination"></span>)</p>
                         <p><strong>Departure Date:</strong> <span id="modalDepartureDate"></span></p>
                         <p><strong>Arrival Date:</strong> <span id="modalReturnDate"></span></p>
                         <p><strong>Price:</strong> £<span id="modalPrice"></span></p>
-                        <div class="text-end">
-                            <button class="btn btn-danger" id="modalRemoveButton"
-                                onclick="openConfirmationFromModal()">Remove</button>
-                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-danger" id="modalRemoveButton" onclick="openConfirmationFromModal()">Remove</button>
                     </div>
                 </div>
             </div>
@@ -143,7 +138,7 @@
                 document.getElementById('modalEndLocation').textContent = endLocation;
                 document.getElementById('modalDestination').textContent = destination;
                 document.getElementById('modalDepartureDate').textContent = departureDate;
-                document.getElementById('modalReturnDate').textContent = returnDate;
+                document.getElementById('modalReturnDate').textContent = returnDate || 'N/A';
                 document.getElementById('modalPrice').textContent = price;
 
                 const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
@@ -177,20 +172,18 @@
                 modal.show();
 
                 document.getElementById('confirmYes').onclick = function () {
-                    document.getElementById('confirmYes').onclick = function () {
-                        fetch(`/bookmarks/${modalBookmarkId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        }).then(response => {
-                            if (response.ok) {
-                                location.reload();
-                            } else {
-                                alert('Failed to remove bookmark.');
-                            }
-                        });
-                    };
+                    fetch(`/bookmarks/${modalBookmarkId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('Failed to remove bookmark.');
+                        }
+                    });
                 };
             }
         </script>
