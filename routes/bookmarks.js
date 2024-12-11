@@ -33,7 +33,8 @@ router.get('/bookmarks', isAuthenticated, async (req, res) => {
         
         bookmarks.forEach(bookmark => {
             bookmark.departure_date = formatDate(bookmark.departure_date);
-            bookmark.return_date = bookmark.return_date ? formatDate(bookmark.return_date) : "N/A";
+            bookmark.return_date = formatDate(bookmark.return_date);
+            console.log(bookmark.departure_date, bookmark.return_date);
         });
 
         res.render('bookmarks', {

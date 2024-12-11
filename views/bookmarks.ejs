@@ -51,7 +51,7 @@
                                             <%= bookmark.start_location %> (<%= bookmark.origin %>)
                                         </h6>
                                         <p>
-                                            <%= new Date(bookmark.departure_date).toLocaleDateString() %>
+                                            <%= bookmark.departure_date %>
                                         </p>
                                     </div>
                                     <div class="text-center col-md-4">
@@ -61,8 +61,7 @@
                                             <%= bookmark.end_location %> (<%= bookmark.destination %>)
                                         </h6>
                                         <p>
-                                            <%= bookmark.return_date ? new
-                                                Date(bookmark.return_date).toLocaleDateString() : 'N/A' %>
+                                            <%= bookmark.return_date %>
                                         </p>
                                     </div>
                                     <div class="col-md-4 text-end">
@@ -144,7 +143,7 @@
                 document.getElementById('modalEndLocation').textContent = endLocation;
                 document.getElementById('modalDestination').textContent = destination;
                 document.getElementById('modalDepartureDate').textContent = departureDate;
-                document.getElementById('modalReturnDate').textContent = returnDate || 'N/A';
+                document.getElementById('modalReturnDate').textContent = returnDate;
                 document.getElementById('modalPrice').textContent = price;
 
                 const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
