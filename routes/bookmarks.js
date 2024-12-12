@@ -3,7 +3,6 @@ const { callStoredProcedure } = require('../db');
 
 const router = express.Router();
 
-// Middleware to check user authentication
 function isAuthenticated(req, res, next) {
     if (req.session.user) {
         return next();
@@ -12,7 +11,6 @@ function isAuthenticated(req, res, next) {
     res.redirect('/login');
 }
 
-// Utility function to format dates
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -24,14 +22,12 @@ function formatDate(dateString) {
     return `${hours}:${minutes} ${day}/${month}/${year}`;
 }
 
-// Fetch all bookmarks for the authenticated user
 router.get('/bookmarks', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
 
     try {
         const bookmarks = await callStoredProcedure('GetBookmarksByUser', [userId]);
 
-        // Format dates for display
         bookmarks.forEach(bookmark => {
             bookmark.departure_date = formatDate(bookmark.departure_date);
             bookmark.return_date = formatDate(bookmark.return_date);
@@ -39,7 +35,7 @@ router.get('/bookmarks', isAuthenticated, async (req, res) => {
 
         res.render('bookmarks', {
             bookmarks,
-            query: null, // No search query
+            query: null,
         });
     } catch (error) {
         console.error('Error fetching bookmarks:', error.message);
@@ -47,7 +43,6 @@ router.get('/bookmarks', isAuthenticated, async (req, res) => {
     }
 });
 
-// Search bookmarks based on user query
 router.get('/bookmarks/search', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
     const query = req.query.query || '';
@@ -55,13 +50,11 @@ router.get('/bookmarks/search', isAuthenticated, async (req, res) => {
     try {
         const bookmarks = await callStoredProcedure('GetBookmarksByUser', [userId]);
 
-        // Filter bookmarks based on search query
         const filteredBookmarks = bookmarks.filter(bookmark =>
             [bookmark.origin, bookmark.destination, bookmark.start_location, bookmark.end_location]
                 .some(field => field.toLowerCase().includes(query.toLowerCase()))
         );
 
-        // Format dates for display
         filteredBookmarks.forEach(bookmark => {
             bookmark.departure_date = formatDate(bookmark.departure_date);
             bookmark.return_date = formatDate(bookmark.return_date);
@@ -69,14 +62,13 @@ router.get('/bookmarks/search', isAuthenticated, async (req, res) => {
 
         res.render('bookmarks', {
             bookmarks: filteredBookmarks,
-            query, // Preserve search query in input
+            query,
         });
     } catch (error) {
         console.error('Error searching bookmarks:', error.message);
         res.status(500).send('Failed to search bookmarks.');
     }
 });
-
 
 router.post('/bookmarks/toggle', async (req, res) => {
     if (!req.session.user) {
@@ -92,7 +84,6 @@ router.post('/bookmarks/toggle', async (req, res) => {
         const formattedReturnDate = returnDate ? new Date(returnDate).toISOString().slice(0, 19).replace('T', ' ') : null;
 
 
-        // Check if the bookmark already exists
         const existingBookmarks = await callStoredProcedure('GetBookmarksByUser', [userId]);
         const existingBookmark = existingBookmarks.find(
             bookmark =>
@@ -113,7 +104,6 @@ router.post('/bookmarks/toggle', async (req, res) => {
             return res.json({ success: true, bookmarked: false });
         } else {
 
-
             await callStoredProcedure('AddBookmark', [
                 userId,
                 origin,
@@ -124,7 +114,7 @@ router.post('/bookmarks/toggle', async (req, res) => {
                 formattedReturnDate,
                 price,
             ]);
-  
+
             return res.json({ success: true, bookmarked: true });
         }
     } catch (error) {
@@ -133,8 +123,6 @@ router.post('/bookmarks/toggle', async (req, res) => {
     }
 });
 
-
-// Delete a bookmark by ID
 router.delete('/bookmarks/:id', isAuthenticated, async (req, res) => {
     const bookmarkId = req.params.id;
 

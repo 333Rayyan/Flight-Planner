@@ -4,7 +4,6 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const db = require('../db');
 
-// Middleware to protect routes
 function isAuthenticated(req, res, next) {
     if (req.session.user) {
         return next();
@@ -13,7 +12,6 @@ function isAuthenticated(req, res, next) {
     res.redirect('/login');
 }
 
-// Profile route
 router.get('/profile', isAuthenticated, async (req, res) => {
     try {
         const [user] = await db.pool.query(

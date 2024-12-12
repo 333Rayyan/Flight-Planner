@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     height: 100%;
 }
 
@@ -145,4 +146,18 @@ body {
 
 .captcha-container {
     margin: 20px 0;
+}
+
+/* search.ejs */
+
+.required-asterisk {
+    color: red;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+#searchForm #errorMessage {
+    font-size: 0.85rem;
+    color: red;
+    margin-top: 5px;
 }

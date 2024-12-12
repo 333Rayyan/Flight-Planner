@@ -43,6 +43,34 @@ router.get('/search', async (req, res) => {
     children = children ? parseInt(children) : 0;
     maxPrice = maxPrice ? parseInt(maxPrice) : 0;
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+
+    // Check if departureDate is invalid or in the past
+    if (departureDate) {
+        const parsedDepartureDate = new Date(departureDate);
+        if (parsedDepartureDate < today) {
+            return res.render('search', {
+                query: req.query,
+                cities: req.app.locals.cities,
+                errorMessage: 'Please select a valid departure date in the future.',
+            });
+        }
+    }
+
+    // Check if returnDate is earlier than departureDate
+    if (returnDate && departureDate) {
+        const parsedDepartureDate = new Date(departureDate);
+        const parsedReturnDate = new Date(returnDate);
+        if (parsedReturnDate < parsedDepartureDate) {
+            return res.render('search', {
+                query: req.query,
+                cities: req.app.locals.cities,
+                errorMessage: 'Return date cannot be earlier than the departure date.',
+            });
+        }
+    }
+
     if (!departureDate) {
         return res.render('search', {
             query: {
@@ -50,6 +78,7 @@ router.get('/search', async (req, res) => {
                 originLocationCode: originLocationCode || '',
             },
             cities: req.app.locals.cities,
+            errorMessage: null,
         });
     }
 
@@ -59,9 +88,7 @@ router.get('/search', async (req, res) => {
         let bookmarks = [];
         if (req.session.user) {
             const userId = req.session.user.id;
-            console.log(`Fetching bookmarks for user ID: ${userId}`);
             bookmarks = await db.callStoredProcedure('GetBookmarksByUser', [userId]);
-            console.log('User bookmarks:', bookmarks);
         }
 
         const bookmarkedOffers = bookmarks.map(b => JSON.stringify({
@@ -103,10 +130,12 @@ router.get('/search', async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching flight offers:', error.response?.data || error.message);
-        res.status(500).send('Failed to fetch flight offers');
+        res.status(500).render('search', {
+            query: req.query,
+            cities: req.app.locals.cities,
+            errorMessage: 'Failed to fetch flight offers. Please try again later.',
+        });
     }
 });
 
 module.exports = router;
-
-

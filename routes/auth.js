@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
-const axios = require('axios'); // Required to verify hCaptcha token
+const axios = require('axios');
 const db = require('../db');
 
 const router = express.Router();
@@ -24,7 +24,7 @@ router.post(
             }
             return true;
         }),
-        body('h-captcha-response').notEmpty().withMessage('Captcha verification failed'), // Ensure hCaptcha response is present
+        body('h-captcha-response').notEmpty().withMessage('Captcha verification failed'),
     ],
     async (req, res) => {
         const errors = validationResult(req);
@@ -37,9 +37,8 @@ router.post(
             });
         }
 
-        // Verify the hCaptcha response
         try {
-            const captchaSecret = process.env.HCAPTCHA_SECRET_KEY; // Ensure this is set in your .env file
+            const captchaSecret = process.env.HCAPTCHA_SECRET_KEY;
             const captchaVerifyURL = 'https://hcaptcha.com/siteverify';
 
             const captchaResponse = await axios.post(captchaVerifyURL, null, {

@@ -3,14 +3,12 @@ const db = require('../db');
 
 const router = express.Router();
 
-
 function isAuthenticated(req, res, next) {
     if (req.session.user) {
         return next();
     }
     res.status(401).json({ message: 'Unauthorized' });
 }
-
 
 router.get('/api/bookmarks', isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
@@ -27,7 +25,6 @@ router.get('/api/bookmarks', isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to fetch bookmarks.' });
     }
 });
-
 
 router.delete('/api/bookmarks/:id', isAuthenticated, async (req, res) => {
     const bookmarkId = req.params.id;
@@ -49,6 +46,5 @@ router.delete('/api/bookmarks/:id', isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to delete bookmark.' });
     }
 });
-
 
 module.exports = router;
