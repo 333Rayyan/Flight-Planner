@@ -43,7 +43,8 @@ router.post(
             const captchaVerifyURL = 'https://hcaptcha.com/siteverify';
 
             const captchaResponse = await axios.post(captchaVerifyURL, null, {
-                params: {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: {
                     secret: captchaSecret,
                     response: captchaToken,
                 },
