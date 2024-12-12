@@ -50,6 +50,7 @@ router.post(
             });
 
             if (!captchaResponse.data.success) {
+                console.error('Captcha verification failed:', captchaResponse.data['error-codes']);
                 return res.status(400).render('register', {
                     errorMessages: [{ msg: 'Captcha verification failed. Please try again.' }],
                     oldData: { email, username },
