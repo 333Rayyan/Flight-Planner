@@ -5,8 +5,144 @@ html, body {
 body {
     display: flex;
     flex-direction: column;
+    background-color: #f8f9fa;
 }
 
 main {
     flex: 1 0 auto;
+}
+
+/* Navbar links hover effect */
+.nav-link {
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border-radius: 5px;
+    padding: 5px 10px;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+/* Navbar toggler button for mobile */
+.navbar-toggler {
+    border: none;
+}
+
+.navbar-toggler-icon {
+    background-color: #ffffff;
+    border-radius: 2px;
+}
+
+/* flights.ejs */
+.flight-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.flight-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bookmark-icon {
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.details-container {
+    display: none;
+}
+
+.details-container.show {
+    display: block;
+}
+
+.rotate-plane {
+    font-size: 3rem;
+    transform: rotate(90deg);
+    display: inline-block;
+}
+
+/* home.ejs */
+.destination-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    width: 100%;
+    height: 250px;
+}
+
+.destination-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    transition: transform 0.3s ease;
+}
+
+.destination-card:hover img {
+    transform: scale(1.1);
+}
+
+.destination-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.destination-card:hover .destination-overlay {
+    opacity: 1;
+}
+
+/* login.ejs */
+
+.error-message {
+    font-size: 0.85rem;
+    color: red;
+}
+
+/* register.ejs */
+
+body {
+    background-color: #f8f9fa;
+}
+
+.form-container {
+    max-width: 500px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.password-hint {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.error-message {
+    font-size: 0.85rem;
+    color: red;
+}
+
+.captcha-container {
+    margin: 20px 0;
 }

@@ -91,16 +91,6 @@ router.post('/bookmarks/toggle', async (req, res) => {
         const formattedDepartureDate = new Date(departureDate).toISOString().slice(0, 19).replace('T', ' ');
         const formattedReturnDate = returnDate ? new Date(returnDate).toISOString().slice(0, 19).replace('T', ' ') : null;
 
-        // console.log('Checking if bookmark exists for:', {
-        //     userId,
-        //     origin,
-        //     startLocation,
-        //     destination,
-        //     endLocation,
-        //     formattedDepartureDate,
-        //     formattedReturnDate,
-        //     price,
-        // });
 
         // Check if the bookmark already exists
         const existingBookmarks = await callStoredProcedure('GetBookmarksByUser', [userId]);

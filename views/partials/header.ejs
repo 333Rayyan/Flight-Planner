@@ -2,20 +2,35 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <h1 class="mb-0">Flight Planner</h1>
-            <nav>
-                <ul class="nav">
-                    <li class="nav-item"><a class="nav-link text-white" href="/">Home</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="/about">About</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="/search">Search Flights</a></li>
-                    <% if (user) { %>
-                        <li class="nav-item"><a class="nav-link text-white" href="/profile">Profile</a></li>
-                        <li class="nav-item"><a class="nav-link text-white" href="/bookmarks">My Bookmarks</a></li>
-                        <li class="nav-item"><a class="nav-link text-white" href="/logout">Logout</a></li>
-                    <% } else { %>
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link text-white" href="/">Home</a></li>
+                        <li class="nav-item"><a class="nav-link text-white" href="/about">About</a></li>
+                        <li class="nav-item"><a class="nav-link text-white" href="/search">Search Flights</a></li>
+                        <% if (user) { %>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <%= user.username %>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                                    <li><a class="dropdown-item" href="/bookmarks">My Bookmarks</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
+                                </ul>
+                            </li>
+                        <% } else { %>
                             <li class="nav-item"><a class="nav-link text-white" href="/register">Register</a></li>
                             <li class="nav-item"><a class="nav-link text-white" href="/login">Login</a></li>
-                    <% } %>
-                </ul>
+                        <% } %>
+                    </ul>
+                </div>
             </nav>
         </div>
     </div>

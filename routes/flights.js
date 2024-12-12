@@ -44,7 +44,6 @@ router.get('/search', async (req, res) => {
     maxPrice = maxPrice ? parseInt(maxPrice) : 0;
 
     if (!departureDate) {
-        console.log('No departure date provided, rendering search form...');
         return res.render('search', {
             query: {
                 destinationLocationCode: destinationLocationCode || '',
