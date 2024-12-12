@@ -8,7 +8,7 @@ function isAuthenticated(req, res, next) {
         return next();
     }
     req.session.returnTo = req.originalUrl;
-    res.redirect('/login');
+    res.redirect('https://doc.gold.ac.uk/usr/405/login');
 }
 
 function formatDate(dateString) {

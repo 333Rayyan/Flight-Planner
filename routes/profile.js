@@ -9,7 +9,7 @@ function isAuthenticated(req, res, next) {
         return next();
     }
     req.session.returnTo = req.originalUrl;
-    res.redirect('/login');
+    res.redirect('https://doc.gold.ac.uk/usr/405/login');
 }
 
 router.get('/profile', isAuthenticated, async (req, res) => {
@@ -20,7 +20,7 @@ router.get('/profile', isAuthenticated, async (req, res) => {
         );
 
         if (user.length === 0) {
-            return res.redirect('/logout');
+            return res.redirect('https://doc.gold.ac.uk/usr/405/logout');
         }
 
         res.render('profile', {
@@ -43,7 +43,7 @@ router.post('/profile/change-password', isAuthenticated, async (req, res) => {
     try {
         if (newPassword !== confirmNewPassword) {
             req.session.error = 'Passwords do not match.';
-            return res.redirect('/profile');
+            return res.redirect('https://doc.gold.ac.uk/usr/405/profile');
         }
 
         const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$/;
@@ -54,31 +54,31 @@ router.post('/profile/change-password', isAuthenticated, async (req, res) => {
                 - Include at least one lowercase letter
                 - Include at least one number
                 - Include at least one special character (!@#$%^&*)`;
-            return res.redirect('/profile');
+            return res.redirect('https://doc.gold.ac.uk/usr/405/profile');
         }
 
         const [rows] = await db.pool.query('SELECT password FROM users WHERE id = ?', [req.session.user.id]);
         if (rows.length === 0) {
             req.session.error = 'User not found.';
-            return res.redirect('/logout');
+            return res.redirect('https://doc.gold.ac.uk/usr/405/logout');
         }
 
         const user = rows[0];
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             req.session.error = 'Current password is incorrect.';
-            return res.redirect('/profile');
+            return res.redirect('https://doc.gold.ac.uk/usr/405/profile');
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await db.pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.session.user.id]);
 
         req.session.message = 'Password successfully updated.';
-        res.redirect('/profile');
+        res.redirect('https://doc.gold.ac.uk/usr/405/profile');
     } catch (err) {
         console.error('Error changing password:', err);
         req.session.error = 'Failed to change password. Please try again.';
-        res.redirect('/profile');
+        res.redirect('https://doc.gold.ac.uk/usr/405/profile');
     }
 });
 
@@ -93,7 +93,7 @@ router.post('/profile/delete', isAuthenticated, async (req, res) => {
                 console.error('Error destroying session:', err.message);
                 return res.status(500).send('An error occurred while deleting your account.');
             }
-            res.redirect('/');
+            res.redirect('https://doc.gold.ac.uk/usr/405/');
         });
     } catch (error) {
         console.error('Error deleting account:', error.message);

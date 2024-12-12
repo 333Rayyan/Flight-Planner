@@ -43,7 +43,7 @@ router.post(
             );
 
             if (result.affectedRows) {
-                return res.redirect('/login');
+                return res.redirect('https://doc.gold.ac.uk/usr/405/login');
             } else {
                 return res.status(500).render('register', {
                     errorMessages: [{ msg: 'Error registering user.' }],
@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
         }
 
         req.session.user = { id: user.id, username: user.username };
-        res.redirect(req.session.returnTo || '/');
+        res.redirect(req.session.returnTo || 'https://doc.gold.ac.uk/usr/405/');
         delete req.session.returnTo;
     } catch (err) {
         console.error(err);
@@ -112,7 +112,7 @@ router.get('/logout', (req, res) => {
             console.error(err);
             return res.status(500).send('Unable to log out.');
         }
-        res.redirect('/login');
+        res.redirect('https://doc.gold.ac.uk/usr/405/login');
     });
 });
 
